@@ -1,5 +1,28 @@
 // /js/main.js
 
+/**
+ * Вычисляет корневой путь приложения, чтобы учесть название репозитория (/ffff/).
+ * Результат: '/ffff/'
+ */
+function getBasePath() {
+    let path = window.location.pathname; 
+    
+    // 1. Оставляем только часть, которая содержит путь до index.html
+    // Например, из /ffff/js/main.js получаем /ffff/js/
+    path = path.substring(0, path.lastIndexOf('/') + 1); 
+    
+    // 2. Убираем '/js/' в конце, чтобы получить корень приложения
+    if (path.endsWith('/js/')) {
+        path = path.substring(0, path.length - 3); // Удаляем /js/
+    }
+    
+    // Теперь path должно быть: /ffff/
+    return path; 
+}
+
+// Делаем переменную глобально доступной через window
+window.BASE_PATH = getBasePath();
+
 import { renderPositionSelectionScreen } from './screens/PositionSelection.js';
 import { renderPlayerDashboardScreen } from './PlayerDashboard.js';
 import { authenticateTelegram } from './ApiService.js'; 
