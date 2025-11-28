@@ -2,7 +2,7 @@
 
 import { fetchDashboard } from '../ApiService.js'; 
 
-const TEMPLATE_URL = '../dashboard.html'; // 
+const TEMPLATE_URL = 'dashboard.html'; // 
 
 /**
  * Загружает и рендерит экран Дашборда игрока.
