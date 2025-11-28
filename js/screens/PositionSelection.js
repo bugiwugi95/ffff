@@ -15,7 +15,7 @@ let screenState = {
 
 let rootElement; 
 // ⬅️ ПУТЬ К ШАБЛОНУ ИСПРАВЛЕН
-const TEMPLATE_URL = '/js/position-selection.html';
+const TEMPLATE_URL = '../position-selection.html';
 
 // ------------------------------------------------------------------------
 // ЛОГИКА
