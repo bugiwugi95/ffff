@@ -1,6 +1,6 @@
 // /js/screens/PlayerDashboard.js
 
-import { fetchDashboard } from '../ApiService.js'; 
+import { fetchDashboard } from './ApiService.js'; 
 
 const TEMPLATE_URL = '../dashboard.html'; // 
 

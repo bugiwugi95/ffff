@@ -1,7 +1,7 @@
 // /js/screens/PositionSelection.js
 
-import { updatePlayerProfile } from '../ApiService.js'; // ⬅️ ПУТЬ ИСПРАВЛЕН
-import { navigateTo } from '../main.js'; 
+import { updatePlayerProfile } from './ApiService.js'; // ⬅️ ПУТЬ ИСПРАВЛЕН
+import { navigateTo } from './main.js'; 
 
 // ------------------------------------------------------------------------
 // СОСТОЯНИЕ

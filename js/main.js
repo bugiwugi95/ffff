@@ -1,7 +1,7 @@
 // /js/main.js
 
 import { renderPositionSelectionScreen } from './screens/PositionSelection.js';
-import { renderPlayerDashboardScreen } from './screens/PlayerDashboard.js';
+import { renderPlayerDashboardScreen } from './PlayerDashboard.js';
 import { authenticateTelegram } from './ApiService.js'; 
 
 const appRoot = document.getElementById('app-root');
