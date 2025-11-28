@@ -1,0 +1,101 @@
+<div class="relative flex min-h-screen w-full flex-col">
+    <main class="flex-1 pb-24">
+        <div class="flex items-center bg-background-light dark:bg-background-dark p-4 sticky top-0 z-10">
+            <div class="flex size-12 shrink-0 items-center justify-start">
+                </div>
+            <h1 class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">Dashboard</h1>
+            <div class="flex w-12 items-center justify-end">
+                <button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-12 bg-transparent text-slate-900 dark:text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0">
+                    <span class="material-symbols-outlined">settings</span>
+                </button>
+            </div>
+        </div>
+        <div class="px-4">
+            <div class="flex w-full flex-col gap-4">
+                <div class="flex items-center gap-4">
+                    <div id="player-avatar" class="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-24 w-24 shrink-0" data-alt="Abstract gradient placeholder for player avatar" style='background-image: url("https://via.placeholder.com/96x96");'></div>
+                    <div class="flex flex-col justify-center">
+                        <p id="player-nickname" class="text-slate-900 dark:text-white text-[22px] font-bold leading-tight tracking-[-0.015em]">Alex Mercer</p>
+                        <p id="player-position" class="text-slate-500 dark:text-slate-400 text-base font-normal leading-normal">Forward • FC Dynamo</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-3 p-4">
+            <div class="flex min-w-[100px] flex-1 flex-col gap-2 rounded-lg bg-slate-200/50 dark:bg-slate-800/50 p-4">
+                <p class="text-slate-600 dark:text-slate-300 text-sm font-medium leading-normal">Голы</p>
+                <p id="stat-goals" class="text-slate-900 dark:text-white tracking-light text-2xl font-bold leading-tight">12</p>
+            </div>
+            <div class="flex min-w-[100px] flex-1 flex-col gap-2 rounded-lg bg-slate-200/50 dark:bg-slate-800/50 p-4">
+                <p class="text-slate-600 dark:text-slate-300 text-sm font-medium leading-normal">Пасы</p>
+                <p id="stat-assists" class="text-slate-900 dark:text-white tracking-light text-2xl font-bold leading-tight">8</p>
+            </div>
+            <div class="flex min-w-[100px] flex-1 flex-col gap-2 rounded-lg bg-slate-200/50 dark:bg-slate-800/50 p-4">
+                <p class="text-slate-600 dark:text-slate-300 text-sm font-medium leading-normal">Матчи</p>
+                <p id="stat-matches" class="text-slate-900 dark:text-white tracking-light text-2xl font-bold leading-tight">15</p>
+            </div>
+        </div>
+        <h2 class="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Последние результаты команды</h2>
+        <div id="results-container" class="flex gap-3 px-4 overflow-x-auto pb-2">
+            </div>
+        <h2 class="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Ближайший матч</h2>
+        <div class="px-4">
+            <div id="upcoming-match-card" class="flex flex-col gap-4 rounded-lg bg-slate-200/50 dark:bg-slate-800/50 p-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex flex-col">
+                        <p class="text-slate-500 dark:text-slate-400 text-sm font-normal">Противник</p>
+                        <p id="opponent-name" class="text-slate-900 dark:text-white text-lg font-bold">Spartak United</p>
+                    </div>
+                    <div id="opponent-logo" class="w-12 h-12 bg-center bg-no-repeat aspect-square bg-cover rounded-full" data-alt="Spartak United team logo" style='background-image: url("https://via.placeholder.com/48x48");'></div>
+                </div>
+                <div class="border-t border-slate-300 dark:border-slate-700 my-1"></div>
+                <div class="flex justify-between items-center text-sm">
+                    <div class="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                        <span class="material-symbols-outlined text-base">calendar_today</span>
+                        <span id="match-date">28 Августа</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                        <span class="material-symbols-outlined text-base">schedule</span>
+                        <span id="match-time">19:00</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                        <span class="material-symbols-outlined text-base">location_on</span>
+                        <span id="match-location">City Stadium</span>
+                    </div>
+                </div>
+            </div>
+            <div id="empty-match-state" class="hidden flex-col items-center justify-center gap-2 rounded-lg bg-slate-200/50 dark:bg-slate-800/50 p-6 text-center mt-4">
+                <span class="material-symbols-outlined text-3xl text-slate-400 dark:text-slate-500">event_busy</span>
+                <p class="text-slate-500 dark:text-slate-400 text-sm">Ближайший матч отсутствует</p>
+            </div>
+        </div>
+        <h2 class="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Прогресс команды</h2>
+        <div class="px-4">
+            <div class="flex flex-col gap-3 rounded-lg bg-slate-200/50 dark:bg-slate-800/50 p-4">
+                <div class="flex items-center justify-between">
+                    <p class="text-slate-900 dark:text-white font-medium">Химия команды</p>
+                    <p id="team-chemistry" class="font-bold text-primary">8.2 / 10</p>
+                </div>
+                <div class="w-full bg-slate-300 dark:bg-slate-700 rounded-full h-2">
+                    <div id="chemistry-bar" class="bg-primary h-2 rounded-full" style="width: 82%"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <nav class="fixed bottom-0 left-0 right-0 h-20 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md border-t border-slate-200 dark:border-slate-800">
+        <div class="flex h-full items-center justify-around px-4">
+            <a class="flex flex-col items-center justify-center gap-1 text-primary" href="#">
+                <span class="material-symbols-outlined">dashboard</span>
+                <span class="text-xs font-medium">Dashboard</span>
+            </a>
+            <a class="flex flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500" href="#">
+                <span class="material-symbols-outlined">emoji_events</span>
+                <span class="text-xs font-medium">Matches</span>
+            </a>
+            <a class="flex flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500" href="#">
+                <span class="material-symbols-outlined">person</span>
+                <span class="text-xs font-medium">Profile</span>
+            </a>
+        </div>
+    </nav>
+</div>

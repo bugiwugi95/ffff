@@ -1,0 +1,51 @@
+/* /style.css */
+
+/* Базовые стили для полной высоты экрана */
+body {
+    min-height: max(884px, 100dvh);
+    background-color: #0D1117; /* background-dark */
+}
+
+/* Стили для карточки при выборе (selected-card) */
+.selected-card {
+    /* Добавляем !important, чтобы гарантировать переопределение базового border-dark */
+    border-color: #3B82F6 !important; 
+}
+
+/* Стили для "свечения" (glow-border) */
+.glow-border {
+    position: relative;
+}
+.glow-border::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(145deg, #3B82F6, #60A5FA, #3B82F6);
+    border-radius: 1.25rem;
+    z-index: -1;
+    filter: blur(8px);
+    opacity: 0.8;
+}
+
+/* Стили для сообщений (успех/ошибка) */
+.message-box {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.875rem; /* text-sm */
+}
+.message-box.error {
+    background-color: rgba(244, 67, 54, 0.2); /* Красный с прозрачностью */
+    color: #f44336;
+    border: 1px solid #f44336;
+}
+.message-box.success {
+    background-color: rgba(76, 175, 80, 0.2); /* Зеленый с прозрачностью */
+    color: #4CAF50;
+    border: 1px solid #4CAF50;
+}

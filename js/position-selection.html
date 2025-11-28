@@ -1,0 +1,55 @@
+<main class="flex w-full max-w-sm flex-grow flex-col pt-10">
+    <div class="mb-8 text-center">
+        <h1 class="text-3xl font-bold">Выбор позиции игрока</h1>
+        <p class="mt-2 text-text-dark-secondary">
+            Выберите вашу основную игровую позицию на поле для формирования вашего профиля.
+        </p>
+    </div>
+    
+    <div class="mb-8">
+        <label class="mb-1 block px-3 text-xs font-medium text-text-dark-secondary" for="nickname">Никнейм</label>
+        <div class="relative">
+            <input 
+                class="w-full rounded-xl border border-border-dark bg-surface-dark py-3 px-4 text-text-dark-primary placeholder:text-text-dark-secondary focus:border-primary focus:ring-2 focus:ring-primary/50" 
+                id="nickname-input" 
+                name="nickname" 
+                type="text" 
+                placeholder="@telegram_username"
+            />
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4" id="position-grid">
+        <div class="position-card relative flex aspect-square cursor-pointer flex-col items-center justify-center rounded-lg border border-border-dark bg-surface-dark p-4 text-center transition-all" data-id="gk">
+            <span class="material-symbols-outlined mb-3 text-5xl text-text-dark-secondary">pan_tool</span>
+            <span class="font-medium">Вратарь</span>
+        </div>
+        
+        <div class="position-card relative flex aspect-square cursor-pointer flex-col items-center justify-center rounded-lg border border-border-dark bg-surface-dark p-4 text-center transition-all" data-id="df">
+            <span class="material-symbols-outlined mb-3 text-5xl text-text-dark-secondary">shield</span>
+            <span class="font-medium">Защитник</span>
+        </div>
+        
+        <div class="position-card relative flex aspect-square cursor-pointer flex-col items-center justify-center rounded-lg border border-border-dark bg-surface-dark p-4 text-center transition-all" data-id="mf">
+            <span class="material-symbols-outlined mb-3 text-5xl text-text-dark-secondary">gamepad</span>
+            <span class="font-medium">Полузащитник</span>
+        </div>
+        
+        <div class="position-card relative flex aspect-square cursor-pointer flex-col items-center justify-center rounded-lg border border-border-dark bg-surface-dark p-4 text-center transition-all" data-id="fw">
+            <span class="material-symbols-outlined mb-3 text-5xl text-text-dark-secondary">bolt</span>
+            <span class="font-medium">Нападающий</span>
+        </div>
+    </div>
+    
+    <div id="message-container" class="mt-4"></div>
+
+    <div class="mt-auto pt-8 pb-4">
+        <button 
+            id="save-button"
+            class="w-full rounded-xl bg-primary py-4 font-bold text-white shadow-lg shadow-blue-500/30"
+            disabled
+        >
+            Сохранить и продолжить
+        </button>
+    </div>
+</main>
