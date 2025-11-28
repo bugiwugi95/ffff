@@ -25,8 +25,8 @@ window.BASE_PATH = getBasePath();
 
 // ... далее ваш код ...
 
-import { renderPositionSelectionScreen } from './screens/PositionSelection.js';
-import { renderPlayerDashboardScreen } from './PlayerDashboard.js';
+import { renderPositionSelectionScreen } from './PositionSelection.js'; // ⬅️ Удалили 'screens/'
+import { renderPlayerDashboardScreen } from './PlayerDashboard.js';     // ⬅️ Удалили 'screens/'
 import { authenticateTelegram } from './ApiService.js'; 
 
 const appRoot = document.getElementById('app-root');
