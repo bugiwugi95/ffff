@@ -3,7 +3,8 @@
 import { fetchDashboard } from './ApiService.js'; 
 
 // ⭐️ Гарантируем корректный BASE_PATH
-const TEMPLATE_URL = (window.BASE_PATH || '/') + 'dashboard.html';
+const TEMPLATE_URL = window.BASE_PATH + 'dashboard.html';
+
 
 /**
  * Загружает и рендерит экран Дашборда игрока.
