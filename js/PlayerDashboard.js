@@ -1,6 +1,9 @@
 // /js/PlayerDashboard.js
 
-import { fetchDashboard } from './ApiService.js'; 
+import { fetchDashboard } from './ApiService.js'; 
+
+// 💡 НОВЫЙ ГЛОБАЛЬНЫЙ ФЛАГ для предотвращения повторного вызова fetchDashboard
+let isDashboardDataLoaded = false; 
 
 // 🔹 Так как dashboard.html лежит в корне проекта
 const TEMPLATE_URL = window.BASE_PATH + 'dashboard.html';
@@ -9,6 +12,16 @@ const TEMPLATE_URL = window.BASE_PATH + 'dashboard.html';
  * Загружает и рендерит экран Дашборда игрока.
  */
 export async function renderPlayerDashboardScreen(targetElement) {
+    
+    // 🛑 КРИТИЧНОЕ ИСПРАВЛЕНИЕ: Блокируем, если данные уже загружаются/загружены
+    if (isDashboardDataLoaded) {
+        console.warn("Попытка повторного вызова renderPlayerDashboardScreen. Игнорируем.");
+        return;
+    }
+    isDashboardDataLoaded = true; // Устанавливаем флаг перед началом
+    // --------------------------------------------------------------------
+
+    // Показываем спиннер, пока загружаются данные
     targetElement.innerHTML = `
         <div class="p-10 text-center">
             <div class="mt-4 animate-spin h-8 w-8 rounded-full border-4 border-primary border-t-transparent mx-auto"></div>
@@ -19,7 +32,8 @@ export async function renderPlayerDashboardScreen(targetElement) {
     `;
 
     try {
-        // 1️⃣ Загрузка данных с бэкенда
+        // 1️⃣ Загрузка данных с бэкенда.
+        // Здесь происходит вызов, который мы теперь защитили от дублирования.
         const dashboardData = await fetchDashboard();
 
         // 2️⃣ Загрузка HTML-шаблона
@@ -44,6 +58,12 @@ export async function renderPlayerDashboardScreen(targetElement) {
         targetElement.innerHTML = `<div class="p-10 text-center text-red-500">
             Не удалось загрузить дашборд: ${error.message}
         </div>`;
+    } finally {
+        // 💡 Очищаем флаг только после ошибки (чтобы можно было попробовать снова)
+        // Если была ошибка (401), токен удаляется, и мы ждем перезапуска.
+        if (targetElement.innerHTML.includes('Не удалось загрузить')) {
+             isDashboardDataLoaded = false;
+        }
     }
 }
 
