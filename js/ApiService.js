@@ -1,9 +1,7 @@
-// /js/ApiService.js (ПОЛНЫЙ ИСПРАВЛЕННЫЙ КОД)
+// /js/ApiService.js
 
-// ⭐️ ВАЖНО: Убедитесь, что это актуальный адрес Ngrok.
+// ⭐️ ВАЖНО: Актуальный адрес Ngrok
 const BASE_URL = "https://definable-outspokenly-janyce.ngrok-free.dev";
-
-
 
 /**
  * Вспомогательная функция для чтения JWT-токена.
@@ -16,29 +14,20 @@ function getAuthToken() {
  * Универсальный обработчик ошибок API.
  */
 async function handleApiError(response, context) {
-    let errorData = {};
-    
-    // 🚨 ЧИТАЕМ ОТВЕТ КАК ТЕКСТ (чтобы избежать SyntaxError на HTML)
     const responseText = await response.text();
-    
-    // ⭐️ КРИТИЧЕСКИЙ ЛОГ: Выводим полный текст ответа для отладки
     console.error(`ОТЛАДКА (${context}): Получен не-JSON ответ (ТЕКСТ):`, responseText); 
     
     try { 
-        // Пытаемся парсить текст как JSON (сработает для JSON 401 от Spring)
-        errorData = JSON.parse(responseText); 
+        const errorData = JSON.parse(responseText); 
+        throw new Error(errorData.message || `Ошибка ${response.status} при ${context}.`);
     } catch (e) {
-        // Если парсинг не удался (потому что это HTML от Ngrok)
         const snippet = responseText.substring(0, 50);
-        throw new Error(`Ошибка ${response.status} при ${context}. Сервер вернул HTML! (Начало: ${snippet}).`);
+        throw new Error(`Ошибка ${response.status} при ${context}. Сервер вернул HTML! (Начало: ${snippet})`);
     }
-    
-    throw new Error(errorData.message || `Ошибка ${response.status} при ${context}.`);
 }
 
-
 // ------------------------------------------------------------------
-// ⭐️ 1. ФУНКЦИЯ АВТОРИЗАЦИИ (POST /api/auth/telegram)
+// 1️⃣ ФУНКЦИЯ АВТОРИЗАЦИИ (POST /api/auth/telegram)
 // ------------------------------------------------------------------
 export async function authenticateTelegram(initData) {
     const API_PATH = '/api/auth/telegram'; 
@@ -46,7 +35,7 @@ export async function authenticateTelegram(initData) {
 
     const response = await fetch(`${BASE_URL}${API_PATH}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain' }, // <--- simple request
         body: JSON.stringify(requestBody)
     });
 
@@ -55,7 +44,6 @@ export async function authenticateTelegram(initData) {
     }
     
     const data = await response.json(); 
-    
     localStorage.setItem('jwt_token', data.token); 
     localStorage.setItem('profileSetupNeeded', data.requiresProfileSetup ? 'true' : 'false');
     
@@ -63,19 +51,19 @@ export async function authenticateTelegram(initData) {
 }
 
 // ------------------------------------------------------------------
-// ⭐️ 2. ОБНОВЛЕНИЕ ПРОФИЛЯ (PUT /player/profile) - ВОССТАНОВЛЕН и ЭКСПОРТИРОВАН
+// 2️⃣ ОБНОВЛЕНИЕ ПРОФИЛЯ (PUT /player/profile)
 // ------------------------------------------------------------------
 export async function updatePlayerProfile(nickname, position) {
     const API_PATH = '/player/profile'; 
     const token = getAuthToken();
     if (!token) throw new Error("Требуется авторизация.");
     
-    const requestBody = { nickname: nickname, position: position };
+    const requestBody = { nickname, position };
 
     const response = await fetch(`${BASE_URL}${API_PATH}`, {
         method: 'PUT',
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'text/plain', // <--- simple request
             'Authorization': `Bearer ${token}` 
         },
         body: JSON.stringify(requestBody)
@@ -93,7 +81,7 @@ export async function updatePlayerProfile(nickname, position) {
 }
 
 // ------------------------------------------------------------------
-// ⭐️ 3. ПОЛУЧЕНИЕ ДАШБОРДА (GET /dashboard) - С ЛОГОМ ТОКЕНА
+// 3️⃣ ПОЛУЧЕНИЕ ДАШБОРДА (GET /api/dashboard)
 // ------------------------------------------------------------------
 export async function fetchDashboard() {
     const API_PATH = '/api/dashboard';
@@ -111,11 +99,11 @@ export async function fetchDashboard() {
     const raw = await response.text();
     console.log("RAW DASHBOARD RESPONSE:", raw);
 
-    // если ответ не JSON → сразу ошибка
     try {
         return JSON.parse(raw);
     } catch (e) {
         throw new Error("Сервер вернул HTML вместо JSON. Начало ответа: " + raw.substring(0, 100));
     }
 }
+
 
