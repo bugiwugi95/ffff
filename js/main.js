@@ -1,5 +1,3 @@
-// /js/main.js
-
 // 🚨 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Гарантированная инициализация BASE_PATH до импорта модулей.
 // Используем IIFE, чтобы создать и присвоить BASE_PATH немедленно.
 (function() {
@@ -35,7 +33,10 @@
 
 import { renderPositionSelectionScreen } from './PositionSelection.js'; 
 import { renderPlayerDashboardScreen } from './PlayerDashboard.js';     
-import { authenticateTelegram } from './ApiService.js';  // Проверьте, что в AppService.js нет ошибки, т.к. вы его не показывали
+import { authenticateTelegram } from './ApiService.js'; 
+
+// ⭐️ НОВЫЙ ФЛАГ: Для защиты от двойного вызова (например, в React StrictMode)
+let isAuthAttempted = false; // 👈 ЭТО НОВАЯ СТРОКА!
 
 const appRoot = document.getElementById('app-root');
 
@@ -64,6 +65,13 @@ export function navigateTo(screenName) {
  * ⭐️ ГЛАВНЫЙ ФЛОУ: Инициализация, Авторизация, Навигация
  */
 async function initializeApp() {
+    // 🛑 Защита от двойного вызова
+    if (isAuthAttempted) { // 👈 НОВАЯ ЛОГИКА
+        console.warn("Попытка повторного запуска initializeApp. Игнорируем.");
+        return; // 👈 НОВАЯ ЛОГИКА
+    }
+    isAuthAttempted = true; // 👈 НОВАЯ ЛОГИКА
+
     appRoot.innerHTML = `
         <div class="p-10 text-center min-h-screen flex flex-col justify-center items-center">
             <div class="mt-4 animate-spin h-8 w-8 rounded-full border-4 border-primary border-t-transparent mx-auto"></div>
