@@ -90,7 +90,7 @@ export async function authenticateTelegram(initData) {
 // ⭐️ 2. ОБНОВЛЕНИЕ ПРОФИЛЯ (PUT /player/profile)
 // ------------------------------------------------------------------
 export async function updatePlayerProfile(nickname, position) {
-    const API_PATH = "/api/player/profile"; 
+    const API_PATH = "/player/profile"; 
     const token = getAuthToken();
     if (!token) throw new Error("Требуется авторизация.");
 
