@@ -1,7 +1,8 @@
 // /js/ApiService.js (ПОЛНЫЙ ИСПРАВЛЕННЫЙ КОД)
 
 // ⭐️ ВАЖНО: Убедитесь, что это актуальный адрес Ngrok.
-const BASE_URL = 'https://definable-outspokenly-janyce.ngrok-free.dev/';
+const BASE_URL = "https://definable-outspokenly-janyce.ngrok-free.dev";
+
 
 
 /**
