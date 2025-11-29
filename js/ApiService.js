@@ -1,7 +1,7 @@
 // /js/ApiService.js (ФИНАЛЬНЫЙ, ЗАЩИЩЕННЫЙ КОД)
 
 // ⭐️ КОРРЕКТИРОВКА: Используем только хост и порт, так как пути API не унифицированы.
-const BASE_URL = 'http://localhost:8080';
+const BASE_URL = 'https://definable-outspokenly-janyce.ngrok-free.dev';
 
 /**
  * Вспомогательная функция для чтения JWT-токена.
