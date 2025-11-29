@@ -1,4 +1,4 @@
-// /js/ApiService.js
+// /js/ApiService.js (ФИНАЛЬНЫЙ, ЗАЩИЩЕННЫЙ КОД)
 
 // ⭐️ КОРРЕКТИРОВКА: Используем только хост и порт, так как пути API не унифицированы.
 const BASE_URL = 'https://definable-outspokenly-janyce.ngrok-free.dev';
@@ -10,11 +10,37 @@ function getAuthToken() {
     return localStorage.getItem('jwt_token');
 }
 
+/**
+ * Универсальный обработчик ошибок API.
+ * Пытается прочитать JSON, если не удается, выводит текст (HTML) для отладки.
+ */
+async function handleApiError(response, context) {
+    let errorData = {};
+    
+    // 🚨 ЧИТАЕМ ОТВЕТ КАК ТЕКСТ (чтобы избежать SyntaxError на HTML)
+    const responseText = await response.text();
+    
+    // ⭐️ КРИТИЧЕСКИЙ ЛОГ: Выводим полный текст ответа для отладки
+    console.error(`ОТЛАДКА (${context}): Получен не-JSON ответ (ТЕКСТ):`, responseText); 
+    
+    try { 
+        // Пытаемся парсить текст как JSON (сработает для JSON 401 от Spring)
+        errorData = JSON.parse(responseText); 
+    } catch (e) {
+        // Если парсинг не удался (потому что это HTML от Ngrok), формируем сообщение
+        const snippet = responseText.substring(0, 50);
+        throw new Error(`Ошибка ${response.status} при ${context}. Сервер вернул HTML! (Начало: ${snippet}).`);
+    }
+    
+    // Если это был JSON с ошибкой
+    throw new Error(errorData.message || `Ошибка ${response.status} при ${context}.`);
+}
+
+
 // ------------------------------------------------------------------
 // ⭐️ 1. ФУНКЦИЯ АВТОРИЗАЦИИ (POST /api/auth/telegram)
 // ------------------------------------------------------------------
 export async function authenticateTelegram(initData) {
-    // ⚠️ Используем /api/auth, как указано в AuthController
     const API_PATH = '/api/auth/telegram'; 
     const requestBody = { initData: initData };
 
@@ -25,14 +51,11 @@ export async function authenticateTelegram(initData) {
     });
 
     if (!response.ok) {
-        let errorData = {};
-        try { errorData = await response.json(); } catch (e) {}
-        throw new Error(errorData.message || `Ошибка ${response.status} при аутентификации.`);
+        return handleApiError(response, "аутентификации");
     }
-
+    
     const data = await response.json(); 
     
-    // ✅ ИСПРАВЛЕНО: Используем data.token (с маленькой буквы 't')
     localStorage.setItem('jwt_token', data.token); 
     localStorage.setItem('profileSetupNeeded', data.requiresProfileSetup ? 'true' : 'false');
     
@@ -43,7 +66,6 @@ export async function authenticateTelegram(initData) {
 // ⭐️ 2. ОБНОВЛЕНИЕ ПРОФИЛЯ (PUT /player/profile)
 // ------------------------------------------------------------------
 export async function updatePlayerProfile(nickname, position) {
-    // ⚠️ Используем /player, как указано в PlayerController
     const API_PATH = '/player/profile'; 
     const token = getAuthToken();
     if (!token) throw new Error("Требуется авторизация.");
@@ -60,9 +82,7 @@ export async function updatePlayerProfile(nickname, position) {
     });
 
     if (!response.ok) {
-        let errorData = {};
-        try { errorData = await response.json(); } catch (e) {}
-        throw new Error(errorData.message || `Ошибка ${response.status} при обновлении профиля.`);
+        return handleApiError(response, "обновлении профиля");
     }
 
     const data = await response.json(); 
@@ -73,10 +93,9 @@ export async function updatePlayerProfile(nickname, position) {
 }
 
 // ------------------------------------------------------------------
-// ⭐️ 3. ПОЛУЧЕНИЕ ДАШБОРДА (GET /dashboard) - С ИСПРАВЛЕННОЙ ОТЛАДКОЙ
+// ⭐️ 3. ПОЛУЧЕНИЕ ДАШБОРДА (GET /dashboard)
 // ------------------------------------------------------------------
 export async function fetchDashboard() {
-    // ⚠️ Используем /dashboard, как указано в DashboardController
     const API_PATH = '/dashboard'; 
     const token = getAuthToken();
     if (!token) throw new Error("Требуется авторизация.");
@@ -89,26 +108,7 @@ export async function fetchDashboard() {
     });
 
     if (!response.ok) {
-        let errorData = {};
-        
-        // 🚨 КРИТИЧЕСКАЯ ОТЛАДКА: Сначала читаем ответ как текст
-        const responseText = await response.text();
-        
-        // ⭐️ ЛОГ: Выводим полный текст ответа (это и есть ваш HTML)
-        console.error("ОТЛАДКА: Получен не-JSON ответ (ТЕКСТ):", responseText); 
-        
-        try { 
-            // Пытаемся парсить его как JSON (сработает, если Spring Boot вернул 401 JSON)
-            errorData = JSON.parse(responseText); 
-        } catch (e) {
-            // Если парсинг не удался (потому что это HTML от Ngrok/Tomcat), 
-            // выводим осмысленное сообщение с фрагментом HTML
-            const snippet = responseText.substring(0, 50);
-            throw new Error(`Ошибка ${response.status} при получении дашборда. Сервер вернул HTML! (Начало: ${snippet}).`);
-        }
-        
-        // Если это был JSON (например, 401 с сообщением об ошибке), используем его
-        throw new Error(errorData.message || `Ошибка ${response.status} при получении дашборда.`);
+        return handleApiError(response, "получении дашборда");
     }
 
     return await response.json(); 
