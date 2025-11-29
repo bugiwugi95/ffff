@@ -14,23 +14,29 @@ function getAuthToken() {
 // ⭐️ 1. ФУНКЦИЯ АВТОРИЗАЦИИ (POST /api/auth/telegram)
 // ------------------------------------------------------------------
 export async function authenticateTelegram(initData) {
-    // ⚠️ Используем /api/auth, как указано в AuthController
-    const API_PATH = '/api/auth/telegram'; 
-    const requestBody = { initData: initData };
+    // ⚠️ Используем /api/auth, как указано в AuthController
+    const API_PATH = '/api/auth/telegram'; 
+    const requestBody = { initData: initData };
 
-    const response = await fetch(`${BASE_URL}${API_PATH}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-    });
-// ...
-    const data = await response.json(); 
-    
-    // ✅ ИСПРАВЛЕНО: Используем data.token (с маленькой буквы 't')
-    localStorage.setItem('jwt_token', data.token); 
-    localStorage.setItem('profileSetupNeeded', data.requiresProfileSetup ? 'true' : 'false');
-    
-    return data;
+    const response = await fetch(`${BASE_URL}${API_PATH}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+        let errorData = {};
+        try { errorData = await response.json(); } catch (e) {}
+        throw new Error(errorData.message || `Ошибка ${response.status} при аутентификации.`);
+    }
+
+    const data = await response.json(); 
+    
+    // ✅ ИСПРАВЛЕНО: Используем data.token (с маленькой буквы 't')
+    localStorage.setItem('jwt_token', data.token); 
+    localStorage.setItem('profileSetupNeeded', data.requiresProfileSetup ? 'true' : 'false');
+    
+    return data;
 }
 
 // ------------------------------------------------------------------
@@ -67,7 +73,7 @@ export async function updatePlayerProfile(nickname, position) {
 }
 
 // ------------------------------------------------------------------
-// ⭐️ 3. ПОЛУЧЕНИЕ ДАШБОРДА (GET /dashboard)
+// ⭐️ 3. ПОЛУЧЕНИЕ ДАШБОРДА (GET /dashboard) - С ИСПРАВЛЕННОЙ ОТЛАДКОЙ
 // ------------------------------------------------------------------
 export async function fetchDashboard() {
     // ⚠️ Используем /dashboard, как указано в DashboardController
@@ -84,7 +90,24 @@ export async function fetchDashboard() {
 
     if (!response.ok) {
         let errorData = {};
-        try { errorData = await response.json(); } catch (e) {}
+        
+        // 🚨 КРИТИЧЕСКАЯ ОТЛАДКА: Сначала читаем ответ как текст
+        const responseText = await response.text();
+        
+        // ⭐️ ЛОГ: Выводим полный текст ответа (это и есть ваш HTML)
+        console.error("ОТЛАДКА: Получен не-JSON ответ (ТЕКСТ):", responseText); 
+        
+        try { 
+            // Пытаемся парсить его как JSON (сработает, если Spring Boot вернул 401 JSON)
+            errorData = JSON.parse(responseText); 
+        } catch (e) {
+            // Если парсинг не удался (потому что это HTML от Ngrok/Tomcat), 
+            // выводим осмысленное сообщение с фрагментом HTML
+            const snippet = responseText.substring(0, 50);
+            throw new Error(`Ошибка ${response.status} при получении дашборда. Сервер вернул HTML! (Начало: ${snippet}).`);
+        }
+        
+        // Если это был JSON (например, 401 с сообщением об ошибке), используем его
         throw new Error(errorData.message || `Ошибка ${response.status} при получении дашборда.`);
     }
 
