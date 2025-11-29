@@ -1,18 +1,20 @@
-// /js/PlayerDashboard.js
-
-import { fetchDashboard } from './ApiService.js'; 
+import { fetchDashboard } from './ApiService.js'; 
 
 // 💡 КРИТИЧЕСКИ ВАЖНЫЙ ФЛАГ: Блокирует повторные вызовы fetchDashboard, 
 // которые могут привести к "паразитному" 401.
 let isDashboardDataLoaded = false; 
 
 // 🔹 Путь к HTML-шаблону
-const TEMPLATE_URL = window.BASE_PATH + 'dashboard.html';
+// 🛑 УДАЛЕН ОТСЮДА: const TEMPLATE_URL = window.BASE_PATH + 'dashboard.html';
 
 /**
  * Загружает и рендерит экран Дашборда игрока.
  */
 export async function renderPlayerDashboardScreen(targetElement) {
+    
+    // ✅ ИСПРАВЛЕНИЕ: Определяем URL здесь, чтобы гарантировать, 
+    // что window.BASE_PATH уже инициализирован main.js.
+    const TEMPLATE_URL = window.BASE_PATH + 'dashboard.html'; 
     
     // 🛑 КРИТИЧНО: Проверка флага перед началом работы
     if (isDashboardDataLoaded) {
@@ -38,7 +40,7 @@ export async function renderPlayerDashboardScreen(targetElement) {
         const dashboardData = await fetchDashboard();
 
         // 2️⃣ Загрузка HTML-шаблона
-        console.log("LOG: DASHBOARD RENDER: Загружаем HTML-шаблон.");
+        console.log("LOG: DASHBOARD RENDER: Загружаем HTML-шаблон по пути:", TEMPLATE_URL); // Добавил лог для отладки
         const response = await fetch(TEMPLATE_URL);
         if (!response.ok) {
              console.error("LOG: DASHBOARD RENDER: Ошибка загрузки шаблона HTML:", response.status);
@@ -91,7 +93,7 @@ function fillDashboard(rootElement, data) {
     const matchCard = rootElement.querySelector('#upcoming-match-card');
     const emptyState = rootElement.querySelector('#empty-match-state');
 
-    if (data.nextMatch) {
+    if (data.nextMatch && data.nextMatch.opponentTeamName !== "Нет матча") {
         matchCard.classList.remove('hidden');
         emptyState.classList.add('hidden');
 
