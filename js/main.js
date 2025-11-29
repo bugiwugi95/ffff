@@ -1,71 +1,81 @@
+// /js/main.js
 
-// 🚨 КРИТИЧЕСКАЯ БЛОКИРОВКА ПОВТОРНОЙ ЗАГРУЗКИ МОДУЛЯ
+// 🚨 КРИТИЧЕСКАЯ БЛОКИРОВКА ПОВТОРНОЙ ЗАГРУЗКИ МОДУЛЯ (Защита от браузера/среды)
 if (window._mainModuleLoaded) {
-    console.warn("Повторная загрузка модуля main.js заблокирована.");
-    // 🛑 Запрещаем дальнейшее выполнение файла
-    throw new Error('Модуль уже загружен.'); 
+    console.warn("LOG: MODULE BLOCK: Повторная загрузка модуля main.js заблокирована.");
+    throw new Error('Модуль уже загружен.'); 
 }
 window._mainModuleLoaded = true;
-// 🚨 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Гарантированная инициализация BASE_PATH до импорта модулей.
+console.log("LOG: MODULE BLOCK: _mainModuleLoaded установлен в true.");
+
+// 🛑 КРИТИЧЕСКАЯ ГЛОБАЛЬНАЯ ЗАЩИТА ОТ ДВОЙНОГО ВЫЗОВА initializeApp
+if (window._appInitialized) {
+    console.warn("LOG: APP BLOCK: Попытка повторного запуска initializeApp заблокирована (глобально).");
+}
+window._appInitialized = true; // Устанавливаем флаг максимально рано!
+console.log("LOG: APP BLOCK: _appInitialized установлен в true.");
+// -------------------------------------------------------------
+
+// 🚨 ИНИЦИАЛИЗАЦИЯ BASE_PATH
 (function() {
     function getBasePath() {
-        let path = window.location.pathname; 
-        
-        path = path.substring(0, path.lastIndexOf('/')); 
-        
+        let path = window.location.pathname; 
+        path = path.substring(0, path.lastIndexOf('/')); 
         if (path.endsWith('/js')) {
-            path = path.substring(0, path.lastIndexOf('/')); 
+            path = path.substring(0, path.lastIndexOf('/')); 
         }
-        
         if (!path.endsWith('/')) {
             path = path + '/';
         }
-        
-        return path; 
+        return path; 
     }
     
-    window.BASE_PATH = getBasePath(); 
-    console.log("BASE_PATH инициализирован:", window.BASE_PATH);
+    window.BASE_PATH = getBasePath(); 
+    console.log("LOG: PATH: BASE_PATH инициализирован:", window.BASE_PATH);
 })();
 
 // ------------------------------------------------------------------------
 // ИМПОРТЫ МОДУЛЕЙ
 // ------------------------------------------------------------------------
 
-import { renderPositionSelectionScreen } from './PositionSelection.js'; 
-import { renderPlayerDashboardScreen } from './PlayerDashboard.js';     
-import { authenticateTelegram } from './ApiService.js'; 
-
-// 🛑 УБРАН ФЛАГ isAuthAttempted, т.к. он не справляется в некоторых окружениях.
+import { renderPositionSelectionScreen } from './PositionSelection.js'; 
+import { renderPlayerDashboardScreen } from './PlayerDashboard.js';     
+import { authenticateTelegram, clearAuthToken } from './ApiService.js'; 
 
 const appRoot = document.getElementById('app-root');
 
 const screens = {
     'position-selection': renderPositionSelectionScreen,
-    'dashboard': renderPlayerDashboardScreen, 
+    'dashboard': renderPlayerDashboardScreen, 
 };
 
 export function navigateTo(screenName) {
+    console.log(`LOG: NAVIGATION: Переход на экран: ${screenName}`);
     if (!appRoot) {
-        console.error('Root element #app-root not found.');
+        console.error('LOG: NAVIGATION: Root element #app-root not found.');
         return;
     }
 
     const renderFunction = screens[screenName];
     if (renderFunction) {
-        appRoot.innerHTML = ''; 
+        appRoot.innerHTML = ''; 
         renderFunction(appRoot);
     } else {
-        console.error(`Screen not found: ${screenName}`);
+        console.error(`LOG: NAVIGATION: Экран не найден: ${screenName}`);
         appRoot.innerHTML = `<div class="p-10 text-center text-red-500">Ошибка навигации. Экран "${screenName}" не найден.</div>`;
     }
 }
 
 // Функция для сброса состояния
 export function resetApp() {
+    console.warn("LOG: RESET: Сброс локального хранилища и флагов.");
     localStorage.removeItem('profileSetupNeeded');
     localStorage.removeItem('player_position_display');
-    localStorage.removeItem('jwt_token');
+    clearAuthToken(); 
+    
+    // Сбрасываем флаги для возможности полного перезапуска
+    window._appInitialized = false; 
+    window._mainModuleLoaded = false;
 }
 
 /**
@@ -73,14 +83,10 @@ export function resetApp() {
  */
 async function initializeApp() {
     
-    // 🛑 ЛОГИКА ЗАЩИТЫ ОТ ПОВТОРНОГО ВЫЗОВА:
-    // Мы добавим специальный флаг в глобальный объект, который не сбрасывается.
-    if (window._appInitialized) {
-        console.warn("Попытка повторного запуска initializeApp (через глобальный флаг). Игнорируем.");
-        return;
+    // Повторная проверка флага, только если он был сброшен через resetApp
+    if (window._appInitialized === false) { 
+         window._appInitialized = true;
     }
-    window._appInitialized = true; // Устанавливаем флаг.
-    // -------------------------------------
 
     appRoot.innerHTML = `
         <div class="p-10 text-center min-h-screen flex flex-col justify-center items-center">
@@ -91,27 +97,23 @@ async function initializeApp() {
         </div>
     `;
 
-    // ⭐️ КРИТИЧНО: Получение данных инициализации от Telegram
-    const initData = window.Telegram?.WebApp?.initData; 
+    const initData = window.Telegram?.WebApp?.initData; 
     
-    // 🛑 НОВАЯ ЛОГИКА ДЛЯ DEBUG-СБРОСА
+    // 🛑 ЛОГИКА DEBUG-СБРОСА
     const urlParams = new URLSearchParams(window.location.search);
     const shouldReset = urlParams.get('reset') === 'true';
 
     if (shouldReset) {
         resetApp();
-        console.log("DEBUG: Локальное хранилище сброшено.");
+        console.log("LOG: INIT: Локальное хранилище сброшено.");
         appRoot.innerHTML = `<div class="p-10 text-center text-primary">
             ✅ Настройки сброшены. Обновите страницу, чтобы начать заново (уже без ?reset=true).
         </div>`;
         return;
     }
-    // -------------------------------------
 
     if (!initData) {
-        // Режим разработки/отладки
-        console.warn("InitData не найдена. Запуск в режиме разработки/отладки.");
-        
+        console.warn("LOG: INIT: InitData не найдена. Режим разработки.");
         const setupNeeded = localStorage.getItem('profileSetupNeeded');
         if (setupNeeded === 'false') {
             navigateTo('dashboard');
@@ -122,30 +124,26 @@ async function initializeApp() {
     }
 
     try {
-        // ⭐️ Шаг 1: АУТЕНТИФИКАЦИЯ (вызываем Spring Boot)
+        console.log("LOG: INIT: Начинаем аутентификацию с InitData.");
+        // ⭐️ Шаг 1: АУТЕНТИФИКАЦИЯ
         const authResponse = await authenticateTelegram(initData);
         
-        // ⭐️ Шаг 2: НАВИГАЦИЯ по флагу от бэкенда
+        // ⭐️ Шаг 2: НАВИГАЦИЯ
         if (authResponse.requiresProfileSetup) {
+            console.log("LOG: INIT: Требуется настройка профиля. Переход на position-selection.");
             navigateTo('position-selection');
         } else {
+            console.log("LOG: INIT: Профиль настроен. Переход на dashboard.");
             navigateTo('dashboard');
         }
         
     } catch (error) {
-        console.error("Ошибка аутентификации:", error);
+        console.error("LOG: INIT FATAL: Ошибка аутентификации. Отображаем сообщение.", error);
         appRoot.innerHTML = `<div class="p-10 text-center text-red-500">
             Ошибка авторизации. Бэкенд (Spring) недоступен или отклонил: ${error.message}
         </div>`;
     }
 }
 
-// 🛑 КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Вызываем функцию немедленно, а не по событию DOMContentLoaded.
-// initializeApp(); 
-
-// 🛑 ЕЩЕ БОЛЕЕ НАДЕЖНЫЙ ВЫЗОВ (особенно для модулей):
-// Сначала ждем DOMContentLoaded, но затем используем нашу собственную защиту.
+// 🛑 ФИНАЛЬНЫЙ ВЫЗОВ: Ждем загрузки DOM
 document.addEventListener('DOMContentLoaded', initializeApp);
-
-// 🛑 ЛУЧШЕЕ РЕШЕНИЕ: Вызываем немедленно, но с защитой, которая находится внутри.
-// (Эта логика теперь реализована с помощью window._appInitialized внутри initializeApp)
