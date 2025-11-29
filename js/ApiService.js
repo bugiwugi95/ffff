@@ -94,7 +94,8 @@ export async function updatePlayerProfile(nickname, position) {
 // ⭐️ 3. ПОЛУЧЕНИЕ ДАШБОРДА (GET /dashboard) - С ЛОГОМ ТОКЕНА
 // ------------------------------------------------------------------
 export async function fetchDashboard() {
-    const API_PATH = '/dashboard'; 
+   const API_PATH = '/api/dashboard';
+
     const token = getAuthToken();
     
     // ⭐️ КРИТИЧЕСКИЙ ЛОГ: Проверяем, существует ли токен
