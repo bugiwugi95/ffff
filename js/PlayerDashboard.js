@@ -48,19 +48,22 @@ export async function renderPlayerDashboardScreen(targetElement) {
 }
 
 /**
- * Заполняет DOM-элементы данными из объекта PlayerDashboard.
+ * Заполняет DOM-элементы данными из JSON без заглушек.
  */
 function fillDashboard(rootElement, data) {
     // --- 1. Профиль ---
-    rootElement.querySelector('#player-nickname').textContent = data.nickname;
-    const position = localStorage.getItem('player_position_display') || data.position; 
-    rootElement.querySelector('#player-position').textContent = `${position} • FC Dynamo`;
-    
+    const username = data.customNickname || data.nickname || "Игрок";
+    rootElement.querySelector('#player-nickname').textContent = username;
+
+    const position = localStorage.getItem('player_position_display') || data.position || "";
+    const teamName = data.teamName || "";
+    rootElement.querySelector('#player-position').textContent = teamName ? `${position} • ${teamName}` : position;
+
     // --- 2. Статистика ---
-    rootElement.querySelector('#stat-goals').textContent = data.seasonGoals || '0';
-    rootElement.querySelector('#stat-assists').textContent = data.seasonAssists || '0';
-    rootElement.querySelector('#stat-matches').textContent = data.seasonMatches || '0';
-    
+    rootElement.querySelector('#stat-goals').textContent = data.seasonGoals ?? '0';
+    rootElement.querySelector('#stat-assists').textContent = data.seasonAssists ?? '0';
+    rootElement.querySelector('#stat-matches').textContent = data.seasonMatches ?? '0';
+
     // --- 3. Ближайший матч ---
     const matchCard = rootElement.querySelector('#upcoming-match-card');
     const emptyState = rootElement.querySelector('#empty-match-state');
@@ -68,47 +71,26 @@ function fillDashboard(rootElement, data) {
     if (data.nextMatch) {
         matchCard.classList.remove('hidden');
         emptyState.classList.add('hidden');
-        
-        rootElement.querySelector('#opponent-name').textContent = data.nextMatch.opponentTeamName;
-        rootElement.querySelector('#match-date').textContent = data.nextMatch.matchDate;
-        rootElement.querySelector('#match-time').textContent = data.nextMatch.matchTime;
-        rootElement.querySelector('#match-location').textContent = data.nextMatch.location;
-        
+
+        rootElement.querySelector('#opponent-name').textContent = data.nextMatch.opponentTeamName || '';
+        rootElement.querySelector('#match-date').textContent = data.nextMatch.matchDate || '';
+        rootElement.querySelector('#match-time').textContent = data.nextMatch.matchTime || '';
+        rootElement.querySelector('#match-location').textContent = data.nextMatch.location || '';
     } else {
         matchCard.classList.add('hidden');
         emptyState.classList.remove('hidden');
     }
-    
-    // --- 4. Прогресс команды ---
-    const chemistryScore = data.teamProgress?.chemistryScore ?? 8.2;
-    const scorePercentage = (chemistryScore * 10).toFixed(0); 
 
-    rootElement.querySelector('#team-chemistry').textContent = `${chemistryScore} / 10`;
-    rootElement.querySelector('#chemistry-bar').style.width = `${scorePercentage}%`;
-
-    // --- 5. Последние результаты (МОК) ---
+    // --- 4. Последние результаты ---
     const resultsContainer = rootElement.querySelector('#results-container');
-    resultsContainer.innerHTML = ''; 
-    const recentResults = ['Win', 'Win', 'Draw', 'Lose', 'Win'];
-    
-    recentResults.forEach(result => {
-        let bgColor, textColor;
-        if (result === 'Win') {
-            bgColor = 'bg-green-500/20';
-            textColor = 'text-green-400';
-        } else if (result === 'Draw') {
-            bgColor = 'bg-slate-500/20';
-            textColor = 'text-slate-400';
-        } else {
-            bgColor = 'bg-red-500/20';
-            textColor = 'text-red-400';
-        }
-
-        resultsContainer.insertAdjacentHTML('beforeend', `
-            <div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full ${bgColor} px-4">
-                <p class="${textColor} text-sm font-medium leading-normal">${result}</p>
-            </div>
-        `);
-    });
+    resultsContainer.innerHTML = '';
+    if (Array.isArray(data.teamProgress?.recentResults)) {
+        data.teamProgress.recentResults.forEach(result => {
+            resultsContainer.insertAdjacentHTML('beforeend', `<div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-gray-200 px-4">
+                <p class="text-gray-700 text-sm font-medium leading-normal">${result}</p>
+            </div>`);
+        });
+    }
 }
+
 
