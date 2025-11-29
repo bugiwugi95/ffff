@@ -121,7 +121,7 @@ function fillDashboard(rootElement, data) {
     }
 }
 
-export { renderPlayerDashboardScreen };
+
 
 
 
