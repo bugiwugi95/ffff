@@ -1,33 +1,41 @@
 // /js/main.js
 
-function getBasePath() {
-    let path = window.location.pathname; 
-    
-    // Удаляем из пути '/js/main.js' или '/js/'
-    path = path.substring(0, path.lastIndexOf('/')); 
-    
-    // Если путь заканчивается на /ffff, мы должны добавить слэш в конце
-    // Если путь содержит /js, мы должны подняться выше.
-    if (path.endsWith('/js')) {
-        path = path.substring(0, path.lastIndexOf('/')); // Удаляем /js
+// 🚨 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Гарантированная инициализация BASE_PATH до импорта модулей.
+// Используем IIFE, чтобы создать и присвоить BASE_PATH немедленно.
+(function() {
+    function getBasePath() {
+        let path = window.location.pathname; 
+        
+        // 1. Удаляем из пути '/js/main.js' или '/js/'
+        path = path.substring(0, path.lastIndexOf('/')); 
+        
+        // 2. Если путь заканчивается на /js, мы поднимаемся на уровень выше, чтобы получить корень приложения (/ffff/)
+        if (path.endsWith('/js')) {
+            path = path.substring(0, path.lastIndexOf('/')); 
+        }
+        
+        // 3. Убедимся, что путь заканчивается слэшем, например: /ffff/
+        if (!path.endsWith('/')) {
+            path = path + '/';
+        }
+        
+        return path; 
     }
     
-    // Убедимся, что путь заканчивается слэшем, например: /ffff/
-    if (!path.endsWith('/')) {
-        path = path + '/';
-    }
+    // Присваиваем глобальную переменную немедленно
+    window.BASE_PATH = getBasePath(); 
     
-    // Возвращает что-то вроде /ffff/
-    return path; 
-}
+    // Проверка для отладки:
+    console.log("BASE_PATH инициализирован:", window.BASE_PATH);
+})();
 
-window.BASE_PATH = getBasePath();
+// ------------------------------------------------------------------------
+// ИМПОРТЫ МОДУЛЕЙ (Они теперь могут использовать BASE_PATH)
+// ------------------------------------------------------------------------
 
-// ... далее ваш код ...
-
-import { renderPositionSelectionScreen } from './PositionSelection.js'; // ⬅️ Удалили 'screens/'
-import { renderPlayerDashboardScreen } from './PlayerDashboard.js';     // ⬅️ Удалили 'screens/'
-import { authenticateTelegram } from './ApiService.js'; 
+import { renderPositionSelectionScreen } from './PositionSelection.js'; 
+import { renderPlayerDashboardScreen } from './PlayerDashboard.js';     
+import { authenticateTelegram } from './ApiService.js';  // Проверьте, что в AppService.js нет ошибки, т.к. вы его не показывали
 
 const appRoot = document.getElementById('app-root');
 
