@@ -1,7 +1,7 @@
 // /js/ApiService.js
 
 // ⭐️ ВАЖНО: Базовый адрес API. 
-const BASE_URL = "https://definable-outspokenly-janyce.ngrok-free.dev"; 
+const BASE_URL = "http://localhost:8080"; 
 
 /**
  * Вспомогательная функция: Чтение JWT-токена из локального хранилища.
