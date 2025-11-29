@@ -14,28 +14,23 @@ function getAuthToken() {
 // ⭐️ 1. ФУНКЦИЯ АВТОРИЗАЦИИ (POST /api/auth/telegram)
 // ------------------------------------------------------------------
 export async function authenticateTelegram(initData) {
-    // ⚠️ Используем /api/auth, как указано в AuthController
-    const API_PATH = '/api/auth/telegram'; 
-    const requestBody = { initData: initData };
+    // ⚠️ Используем /api/auth, как указано в AuthController
+    const API_PATH = '/api/auth/telegram'; 
+    const requestBody = { initData: initData };
 
-    const response = await fetch(`${BASE_URL}${API_PATH}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-    });
-
-    if (!response.ok) {
-        let errorData = {};
-        try { errorData = await response.json(); } catch (e) {}
-        throw new Error(errorData.message || `Ошибка ${response.status} при авторизации.`);
-    }
-
-    const data = await response.json(); 
-    
-    localStorage.setItem('jwt_token', data.jwtToken);
-    localStorage.setItem('profileSetupNeeded', data.requiresProfileSetup ? 'true' : 'false');
-    
-    return data;
+    const response = await fetch(`${BASE_URL}${API_PATH}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+    });
+// ...
+    const data = await response.json(); 
+    
+    // ✅ ИСПРАВЛЕНО: Используем data.token (с маленькой буквы 't')
+    localStorage.setItem('jwt_token', data.token); 
+    localStorage.setItem('profileSetupNeeded', data.requiresProfileSetup ? 'true' : 'false');
+    
+    return data;
 }
 
 // ------------------------------------------------------------------
