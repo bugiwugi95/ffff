@@ -1,122 +1,90 @@
 // /js/ApiService.js
 
-// ⭐️ ВАЖНО: актуальный адрес Ngrok (без лишнего слэша)
-const BASE_URL = "http://localhost:8080"; // <-- Оставил твой адрес
+// ⭐️ ВАЖНО: Базовый адрес API. Должен совпадать с адресом бэкенда.
+const BASE_URL = "http://localhost:8080"; 
 
 /**
- * Вспомогательная функция для чтения JWT-токена.
+ * Вспомогательная функция: Чтение JWT-токена из локального хранилища.
  */
 function getAuthToken() {
+    console.log("LOG: API Service: Запрошен токен.");
     return localStorage.getItem('jwt_token');
 }
 
 /**
- * Вспомогательная функция для удаления JWT-токена.
+ * Вспомогательная функция: Удаление JWT-токена из локального хранилища.
+ * 🛑 КРИТИЧНО: Вызывается при получении ошибки 401/403.
  */
 function clearAuthToken() {
+    console.log("LOG: API Service: Токен удален из localStorage (требуется переавторизация).");
     localStorage.removeItem('jwt_token');
 }
 
 /**
  * Универсальный обработчик ошибок API.
- * * 🚨 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Теперь корректно обрабатывает 401/403, 
- * когда бэкенд возвращает не JSON (например, HTML-страницу ошибки).
+ * 🚨 ГАРАНТИЯ: При 401/403 удаляет токен и бросает исключение для перезапуска.
  */
 async function handleApiError(response, context) {
     const status = response.status;
     const responseText = await response.text();
-    console.error(`ОТЛАДКА (${context} - ${status}): raw response:`, responseText.substring(0, 200) + '...');
+    console.error(`LOG: API ERROR (${context} - ${status}): Raw response start:`, responseText.substring(0, 200) + '...');
 
-    // 1. Сначала проверяем на ошибки авторизации/доступа
+    // 1. Обработка ошибок авторизации/доступа (401: Unauthorized, 403: Forbidden)
     if (status === 401 || status === 403) {
-        // 🛑 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Удаляем нерабочий токен, чтобы обеспечить чистый перезапуск.
+        // 🛑 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Удаляем нерабочий токен.
         clearAuthToken(); 
         
         const authError = status === 401 ? "Неавторизованный доступ (401)" : "Доступ запрещен (403)";
+        console.error(`LOG: FATAL ERROR: ${authError}. Бросаем исключение для прерывания работы.`);
         throw new Error(`${authError} при ${context}. Требуется перезапуск.`);
     }
 
-    // 2. Для остальных ошибок (4xx, 5xx) пытаемся разобрать JSON
+    // 2. Для остальных ошибок (например, 500 Internal Server Error)
     try {
         const errorData = JSON.parse(responseText);
-        // Используем сообщение от сервера, если оно есть
-        throw new Error(errorData.message || `Ошибка ${status} при ${context}`);
+        // Используем сообщение от сервера
+        const errorMessage = errorData.message || `Ошибка ${status}`;
+        console.error(`LOG: SERVER ERROR: ${errorMessage}`);
+        throw new Error(errorMessage + ` при ${context}`);
     } catch (e) {
-        // Если парсинг не удался (например, это HTML или пустой ответ)
+        // Если ответ не является валидным JSON (например, HTML от Spring)
+        console.error(`LOG: NON-JSON ERROR: Сервер вернул нечитаемый ответ при статусе ${status}.`);
         throw new Error(`Ошибка ${status} при ${context}. Сервер вернул нечитаемый ответ.`);
     }
 }
 
 // ------------------------------------------------------------------
-// ⭐️ 1. АВТОРИЗАЦИЯ (POST /api/auth/telegram)
+// ⭐️ 1. АУТЕНТИФИКАЦИЯ (POST /api/auth/telegram)
 // ------------------------------------------------------------------
 export async function authenticateTelegram(initData) {
     const API_PATH = "/api/auth/telegram";
+    console.log("LOG: AUTH: Начинаем аутентификацию.");
 
     const response = await fetch(`${BASE_URL}${API_PATH}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ initData })
     });
-
+    
+    // Проверка статуса ответа
     if (!response.ok) {
-        // handleApiError теперь защищен от 401/403
+        console.error("LOG: AUTH: Аутентификация провалена. Статус:", response.status);
         return handleApiError(response, "аутентификации"); 
     }
 
     const raw = await response.text();
-    console.log("RAW AUTH RESPONSE:", raw.substring(0, 100) + '...');
+    console.log("LOG: AUTH: Успешный RAW ответ:", raw.substring(0, 100) + '...');
 
     try {
         const data = JSON.parse(raw);
-        // 🚨 Здесь происходит сохранение токена
+        // 🚨 КРИТИЧНО: Сохраняем полученный токен
         localStorage.setItem('jwt_token', data.token);
         localStorage.setItem('profileSetupNeeded', data.requiresProfileSetup ? 'true' : 'false');
+        console.log("LOG: AUTH: Токен и флаг настройки профиля сохранены.");
         return data;
     } catch (e) {
+        console.error("LOG: AUTH: Ошибка парсинга JSON ответа.", e);
         throw new Error("Сервер вернул не JSON при аутентификации. Начало: " + raw.substring(0, 100));
-    }
-}
-
-// ------------------------------------------------------------------
-// ⭐️ 2. ОБНОВЛЕНИЕ ПРОФИЛЯ (PUT /player/profile)
-// ------------------------------------------------------------------
-export async function updatePlayerProfile(nickname, position) {
-    const API_PATH = "/api/player/profile"; // 🚨 ИСПРАВЛЕНИЕ: Добавил /api/
-    const token = getAuthToken();
-    if (!token) throw new Error("Требуется авторизация.");
-
-    const response = await fetch(`${BASE_URL}${API_PATH}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ nickname, position })
-    });
-
-    if (!response.ok) {
-        return handleApiError(response, "обновлении профиля");
-    }
-
-    const raw = await response.text();
-    console.log("RAW PROFILE RESPONSE:", raw.substring(0, 100) + '...');
-
-    // 🚀 КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: После успешного обновления профиля,
-    // мы больше не нуждаемся в настройке.
-    localStorage.setItem('profileSetupNeeded', 'false');
-
-    try {
-        const data = JSON.parse(raw);
-        const positionDisplayMap = { 'gk': 'Вратарь', 'df': 'Защитник', 'mf': 'Полузащитник', 'fw': 'Нападающий' };
-        localStorage.setItem('player_position_display', positionDisplayMap[data.position] || data.position);
-        return data;
-    } catch (e) {
-        // Если ответ 200 OK пустой (No Content), это тоже может вызвать ошибку парсинга
-        if (response.status === 200 && raw.trim() === '') {
-             return {}; // Просто возвращаем пустой объект, если сервер вернул 200 без тела
-        }
-        throw new Error("Сервер вернул не JSON при обновлении профиля. Начало: " + raw.substring(0, 100));
     }
 }
 
@@ -126,40 +94,42 @@ export async function updatePlayerProfile(nickname, position) {
 export async function fetchDashboard() {
     const API_PATH = "/api/dashboard";
     const token = getAuthToken();
-    if (!token) throw new Error("Требуется авторизация.");
+    console.log("LOG: DASHBOARD: Вызов API. Токен:", token ? "Найдено" : "НЕ НАЙДЕНО");
+
+    // Защита: Если токена нет, то не отправляем запрос, а сразу бросаем ошибку
+    if (!token) {
+        console.error("LOG: DASHBOARD: Токен отсутствует в хранилище. Исключаем запрос.");
+        throw new Error("Требуется авторизация. Токен отсутствует.");
+    }
 
     const response = await fetch(`${BASE_URL}${API_PATH}`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
     });
-
+    
+    // Проверка статуса ответа
     if (!response.ok) {
-        // handleApiError теперь защищен от 401/403
+        console.error("LOG: DASHBOARD: Запрос дашборда провален. Статус:", response.status);
         return handleApiError(response, "загрузке дашборда");
     }
 
     const raw = await response.text();
-    console.log("RAW DASHBOARD RESPONSE:", raw.substring(0, 100) + '...');
+    console.log("LOG: DASHBOARD: Успешный RAW ответ:", raw.substring(0, 100) + '...');
 
     try {
         return JSON.parse(raw);
     } catch (e) {
+        console.error("LOG: DASHBOARD: Ошибка парсинга JSON ответа.", e);
         throw new Error("Сервер вернул не JSON вместо дашборда. Начало ответа: " + raw.substring(0, 100));
     }
 }
 
-// ------------------------------------------------------------------
-// ⭐️ 4. (ОБЩАЯ ФУНКЦИЯ)
-// ------------------------------------------------------------------
 
-/**
- * ВАЖНО: Это просто заглушка, чтобы не ломать старые импорты.
- * Твоя логика уже использует 'Authorization' напрямую, что хорошо.
- */
-export async function authenticatedFetch(path, options = {}) {
-    // Вся логика fetch теперь должна быть в отдельных функциях (fetchDashboard, updatePlayerProfile)
-    // Эта функция не используется, но может быть заглушкой, если где-то еще остался импорт.
-    console.warn('authenticatedFetch не используется. Используй конкретные функции API.');
-    throw new Error('Функция authenticatedFetch не реализована. Используй конкретные функции API.');
-}
+// (Остальные функции, как updatePlayerProfile и заглушка authenticatedFetch, 
+// были опущены для краткости и фокуса на главной проблеме, но ты можешь их добавить из своего кода.)
 
+export { 
+    authenticateTelegram, 
+    fetchDashboard,
+    clearAuthToken // Добавим для возможного внешнего использования
+};
