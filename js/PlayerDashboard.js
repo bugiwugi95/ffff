@@ -3,7 +3,7 @@
 import { fetchDashboard } from './ApiService.js'; 
 
 // 🔹 Так как dashboard.html лежит в корне проекта
-const TEMPLATE_URL = '/dashboard.html';
+const TEMPLATE_URL = '/ffff/dashboard.html';
 
 /**
  * Загружает и рендерит экран Дашборда игрока.
