@@ -81,7 +81,12 @@ function fillDashboard(rootElement, data) {
         emptyState.classList.remove('hidden');
     }
 
-    // --- 4. Последние результаты ---
+    // --- 4. Прогресс команды ---
+    const chemistryScore = data.teamProgress?.chemistryScore ?? 0;
+    rootElement.querySelector('#team-chemistry').textContent = `${chemistryScore} / 10`;
+    rootElement.querySelector('#chemistry-bar').style.width = `${(chemistryScore * 10).toFixed(0)}%`;
+
+    // --- 5. Последние результаты ---
     const resultsContainer = rootElement.querySelector('#results-container');
     resultsContainer.innerHTML = '';
     if (Array.isArray(data.teamProgress?.recentResults)) {
@@ -92,5 +97,6 @@ function fillDashboard(rootElement, data) {
         });
     }
 }
+
 
 
