@@ -78,6 +78,10 @@ export async function updatePlayerProfile(nickname, position) {
     const raw = await response.text();
     console.log("RAW PROFILE RESPONSE:", raw);
 
+    // 🚀 КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: После успешного обновления профиля,
+        // мы больше не нуждаемся в настройке.
+        localStorage.setItem('profileSetupNeeded', 'false');
+
     try {
         const data = JSON.parse(raw);
         const positionDisplayMap = { 'gk': 'Вратарь', 'df': 'Защитник', 'mf': 'Полузащитник', 'fw': 'Нападающий' };
