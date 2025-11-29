@@ -1,6 +1,6 @@
 // /js/ApiService.js
 
-// ⭐️ ВАЖНО: Базовый адрес API. Должен совпадать с адресом бэкенда.
+// ⭐️ ВАЖНО: Базовый адрес API. 
 const BASE_URL = "http://localhost:8080"; 
 
 /**
@@ -22,39 +22,38 @@ function clearAuthToken() {
 
 /**
  * Универсальный обработчик ошибок API.
- * 🚨 ГАРАНТИЯ: При 401/403 удаляет токен и бросает исключение для перезапуска.
+ * 🚨 ГАРАНТИЯ: При 401/403 удаляет токен и бросает исключение.
  */
 async function handleApiError(response, context) {
     const status = response.status;
     const responseText = await response.text();
     console.error(`LOG: API ERROR (${context} - ${status}): Raw response start:`, responseText.substring(0, 200) + '...');
 
-    // 1. Обработка ошибок авторизации/доступа (401: Unauthorized, 403: Forbidden)
+    // 1. Обработка ошибок авторизации/доступа (401/403)
     if (status === 401 || status === 403) {
         // 🛑 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Удаляем нерабочий токен.
         clearAuthToken(); 
         
         const authError = status === 401 ? "Неавторизованный доступ (401)" : "Доступ запрещен (403)";
-        console.error(`LOG: FATAL ERROR: ${authError}. Бросаем исключение для прерывания работы.`);
+        console.error(`LOG: FATAL ERROR: ${authError}. Бросаем исключение.`);
         throw new Error(`${authError} при ${context}. Требуется перезапуск.`);
     }
 
-    // 2. Для остальных ошибок (например, 500 Internal Server Error)
+    // 2. Для остальных ошибок (4xx, 5xx) пытаемся разобрать JSON
     try {
         const errorData = JSON.parse(responseText);
-        // Используем сообщение от сервера
         const errorMessage = errorData.message || `Ошибка ${status}`;
         console.error(`LOG: SERVER ERROR: ${errorMessage}`);
         throw new Error(errorMessage + ` при ${context}`);
     } catch (e) {
-        // Если ответ не является валидным JSON (например, HTML от Spring)
+        // Если ответ не является валидным JSON 
         console.error(`LOG: NON-JSON ERROR: Сервер вернул нечитаемый ответ при статусе ${status}.`);
         throw new Error(`Ошибка ${status} при ${context}. Сервер вернул нечитаемый ответ.`);
     }
 }
 
 // ------------------------------------------------------------------
-// ⭐️ 1. АУТЕНТИФИКАЦИЯ (POST /api/auth/telegram)
+// ⭐️ 1. АВТОРИЗАЦИЯ (POST /api/auth/telegram)
 // ------------------------------------------------------------------
 export async function authenticateTelegram(initData) {
     const API_PATH = "/api/auth/telegram";
@@ -66,7 +65,6 @@ export async function authenticateTelegram(initData) {
         body: JSON.stringify({ initData })
     });
     
-    // Проверка статуса ответа
     if (!response.ok) {
         console.error("LOG: AUTH: Аутентификация провалена. Статус:", response.status);
         return handleApiError(response, "аутентификации"); 
@@ -89,6 +87,45 @@ export async function authenticateTelegram(initData) {
 }
 
 // ------------------------------------------------------------------
+// ⭐️ 2. ОБНОВЛЕНИЕ ПРОФИЛЯ (PUT /player/profile)
+// ------------------------------------------------------------------
+export async function updatePlayerProfile(nickname, position) {
+    const API_PATH = "/api/player/profile"; 
+    const token = getAuthToken();
+    if (!token) throw new Error("Требуется авторизация.");
+
+    const response = await fetch(`${BASE_URL}${API_PATH}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ nickname, position })
+    });
+
+    if (!response.ok) {
+        return handleApiError(response, "обновлении профиля");
+    }
+
+    const raw = await response.text();
+    console.log("RAW PROFILE RESPONSE:", raw.substring(0, 100) + '...');
+
+    localStorage.setItem('profileSetupNeeded', 'false');
+
+    try {
+        const data = JSON.parse(raw);
+        const positionDisplayMap = { 'gk': 'Вратарь', 'df': 'Защитник', 'mf': 'Полузащитник', 'fw': 'Нападающий' };
+        localStorage.setItem('player_position_display', positionDisplayMap[data.position] || data.position);
+        return data;
+    } catch (e) {
+        if (response.status === 200 && raw.trim() === '') {
+             return {};
+        }
+        throw new Error("Сервер вернул не JSON при обновлении профиля. Начало: " + raw.substring(0, 100));
+    }
+}
+
+// ------------------------------------------------------------------
 // ⭐️ 3. ПОЛУЧЕНИЕ ДАШБОРДА (GET /api/dashboard)
 // ------------------------------------------------------------------
 export async function fetchDashboard() {
@@ -96,9 +133,9 @@ export async function fetchDashboard() {
     const token = getAuthToken();
     console.log("LOG: DASHBOARD: Вызов API. Токен:", token ? "Найдено" : "НЕ НАЙДЕНО");
 
-    // Защита: Если токена нет, то не отправляем запрос, а сразу бросаем ошибку
+    // Защита: Если токена нет, то не отправляем запрос
     if (!token) {
-        console.error("LOG: DASHBOARD: Токен отсутствует в хранилище. Исключаем запрос.");
+        console.error("LOG: DASHBOARD: Токен отсутствует в хранилище. Бросаем ошибку.");
         throw new Error("Требуется авторизация. Токен отсутствует.");
     }
 
@@ -107,7 +144,6 @@ export async function fetchDashboard() {
         headers: { 'Authorization': `Bearer ${token}` }
     });
     
-    // Проверка статуса ответа
     if (!response.ok) {
         console.error("LOG: DASHBOARD: Запрос дашборда провален. Статус:", response.status);
         return handleApiError(response, "загрузке дашборда");
@@ -124,12 +160,12 @@ export async function fetchDashboard() {
     }
 }
 
+// ------------------------------------------------------------------
+// ⭐️ 4. (ОБЩАЯ ФУНКЦИЯ)
+// ------------------------------------------------------------------
+export async function authenticatedFetch(path, options = {}) {
+    console.warn('LOG: WARN: authenticatedFetch не используется. Используй конкретные функции API.');
+    throw new Error('Функция authenticatedFetch не реализована. Используй конкретные функции API.');
+}
 
-// (Остальные функции, как updatePlayerProfile и заглушка authenticatedFetch, 
-// были опущены для краткости и фокуса на главной проблеме, но ты можешь их добавить из своего кода.)
-
-export { 
-    authenticateTelegram, 
-    fetchDashboard,
-    clearAuthToken // Добавим для возможного внешнего использования
-};
+export { clearAuthToken }; // Экспортируем для resetApp в main.js
