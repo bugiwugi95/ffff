@@ -94,25 +94,26 @@ export async function updatePlayerProfile(nickname, position) {
 // ⭐️ 3. ПОЛУЧЕНИЕ ДАШБОРДА (GET /dashboard) - С ЛОГОМ ТОКЕНА
 // ------------------------------------------------------------------
 export async function fetchDashboard() {
-   const API_PATH = '/api/dashboard';
-
+    const API_PATH = '/api/dashboard';
     const token = getAuthToken();
-    
-    // ⭐️ КРИТИЧЕСКИЙ ЛОГ: Проверяем, существует ли токен
-    console.log("ОТЛАДКА: Токен, найденный для дашборда:", token ? "найден" : "ОТСУТСТВУЕТ"); 
 
-    if (!token) throw new Error("Требуется авторизация.");
+    console.log("ОТЛАДКА: токен:", token);
 
     const response = await fetch(`${BASE_URL}${API_PATH}`, {
         method: 'GET',
         headers: {
-            'Authorization': `Bearer ${token}` 
+            'Authorization': `Bearer ${token}`
         }
     });
 
-    if (!response.ok) {
-        return handleApiError(response, "получении дашборда");
-    }
+    const raw = await response.text();
+    console.log("RAW DASHBOARD RESPONSE:", raw);
 
-    return await response.json(); 
+    // если ответ не JSON → сразу ошибка
+    try {
+        return JSON.parse(raw);
+    } catch (e) {
+        throw new Error("Сервер вернул HTML вместо JSON. Начало ответа: " + raw.substring(0, 100));
+    }
 }
+
