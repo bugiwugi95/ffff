@@ -1,18 +1,14 @@
 // 🚨 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Гарантированная инициализация BASE_PATH до импорта модулей.
-// Используем IIFE, чтобы создать и присвоить BASE_PATH немедленно.
 (function() {
     function getBasePath() {
         let path = window.location.pathname; 
         
-        // 1. Удаляем из пути '/js/main.js' или '/js/'
         path = path.substring(0, path.lastIndexOf('/')); 
         
-        // 2. Если путь заканчивается на /js, мы поднимаемся на уровень выше, чтобы получить корень приложения (/ffff/)
         if (path.endsWith('/js')) {
             path = path.substring(0, path.lastIndexOf('/')); 
         }
         
-        // 3. Убедимся, что путь заканчивается слэшем, например: /ffff/
         if (!path.endsWith('/')) {
             path = path + '/';
         }
@@ -20,23 +16,19 @@
         return path; 
     }
     
-    // Присваиваем глобальную переменную немедленно
     window.BASE_PATH = getBasePath(); 
-    
-    // Проверка для отладки:
     console.log("BASE_PATH инициализирован:", window.BASE_PATH);
 })();
 
 // ------------------------------------------------------------------------
-// ИМПОРТЫ МОДУЛЕЙ (Они теперь могут использовать BASE_PATH)
+// ИМПОРТЫ МОДУЛЕЙ
 // ------------------------------------------------------------------------
 
 import { renderPositionSelectionScreen } from './PositionSelection.js'; 
 import { renderPlayerDashboardScreen } from './PlayerDashboard.js';     
 import { authenticateTelegram } from './ApiService.js'; 
 
-// ⭐️ НОВЫЙ ФЛАГ: Для защиты от двойного вызова (например, в React StrictMode)
-let isAuthAttempted = false; // 👈 ЭТО НОВАЯ СТРОКА!
+// 🛑 УБРАН ФЛАГ isAuthAttempted, т.к. он не справляется в некоторых окружениях.
 
 const appRoot = document.getElementById('app-root');
 
@@ -61,16 +53,26 @@ export function navigateTo(screenName) {
     }
 }
 
+// Функция для сброса состояния
+export function resetApp() {
+    localStorage.removeItem('profileSetupNeeded');
+    localStorage.removeItem('player_position_display');
+    localStorage.removeItem('jwt_token');
+}
+
 /**
  * ⭐️ ГЛАВНЫЙ ФЛОУ: Инициализация, Авторизация, Навигация
  */
 async function initializeApp() {
-    // 🛑 Защита от двойного вызова
-    if (isAuthAttempted) { // 👈 НОВАЯ ЛОГИКА
-        console.warn("Попытка повторного запуска initializeApp. Игнорируем.");
-        return; // 👈 НОВАЯ ЛОГИКА
+    
+    // 🛑 ЛОГИКА ЗАЩИТЫ ОТ ПОВТОРНОГО ВЫЗОВА:
+    // Мы добавим специальный флаг в глобальный объект, который не сбрасывается.
+    if (window._appInitialized) {
+        console.warn("Попытка повторного запуска initializeApp (через глобальный флаг). Игнорируем.");
+        return;
     }
-    isAuthAttempted = true; // 👈 НОВАЯ ЛОГИКА
+    window._appInitialized = true; // Устанавливаем флаг.
+    // -------------------------------------
 
     appRoot.innerHTML = `
         <div class="p-10 text-center min-h-screen flex flex-col justify-center items-center">
@@ -83,10 +85,25 @@ async function initializeApp() {
 
     // ⭐️ КРИТИЧНО: Получение данных инициализации от Telegram
     const initData = window.Telegram?.WebApp?.initData; 
+    
+    // 🛑 НОВАЯ ЛОГИКА ДЛЯ DEBUG-СБРОСА
+    const urlParams = new URLSearchParams(window.location.search);
+    const shouldReset = urlParams.get('reset') === 'true';
+
+    if (shouldReset) {
+        resetApp();
+        console.log("DEBUG: Локальное хранилище сброшено.");
+        appRoot.innerHTML = `<div class="p-10 text-center text-primary">
+            ✅ Настройки сброшены. Обновите страницу, чтобы начать заново (уже без ?reset=true).
+        </div>`;
+        return;
+    }
+    // -------------------------------------
 
     if (!initData) {
-        // Режим разработки, если запущен не в Telegram
+        // Режим разработки/отладки
         console.warn("InitData не найдена. Запуск в режиме разработки/отладки.");
+        
         const setupNeeded = localStorage.getItem('profileSetupNeeded');
         if (setupNeeded === 'false') {
             navigateTo('dashboard');
@@ -115,12 +132,12 @@ async function initializeApp() {
     }
 }
 
+// 🛑 КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Вызываем функцию немедленно, а не по событию DOMContentLoaded.
+// initializeApp(); 
+
+// 🛑 ЕЩЕ БОЛЕЕ НАДЕЖНЫЙ ВЫЗОВ (особенно для модулей):
+// Сначала ждем DOMContentLoaded, но затем используем нашу собственную защиту.
 document.addEventListener('DOMContentLoaded', initializeApp);
 
-// Функция для сброса состояния
-export function resetApp() {
-    localStorage.removeItem('profileSetupNeeded');
-    localStorage.removeItem('player_position_display');
-    localStorage.removeItem('jwt_token');
-    initializeApp();
-}
+// 🛑 ЛУЧШЕЕ РЕШЕНИЕ: Вызываем немедленно, но с защитой, которая находится внутри.
+// (Эта логика теперь реализована с помощью window._appInitialized внутри initializeApp)
