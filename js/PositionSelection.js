@@ -1,6 +1,7 @@
-// /js/screens/PositionSelection.js
+// /js/PositionSelection.js
 
-import { updatePlayerProfile } from './ApiService.js'; // ⬅️ ПУТЬ ИСПРАВЛЕН
+// 🚨 ИСПРАВЛЕНО: Пути импорта теперь локальные (в одной папке /js/)
+import { updatePlayerProfile } from './ApiService.js'; 
 import { navigateTo } from './main.js'; 
 
 // ------------------------------------------------------------------------
@@ -14,23 +15,17 @@ let screenState = {
 };
 
 let rootElement; 
-// ⬅️ ПУТЬ К ШАБЛОНУ ИСПРАВЛЕН
-// 🚨 ИСПРАВЛЕННЫЙ ПУТЬ К ШАБЛОНУ 
-const TEMPLATE_URL = window.BASE_PATH + 'position-selection.html'; // ⬅️ Теперь будет /ffff/position-selection.html
 
-// ...
+// 🚨 ИСПРАВЛЕНО: Используем глобальный BASE_PATH (учитывая /ffff/)
+const TEMPLATE_URL = window.BASE_PATH + 'position-selection.html'; 
 
-export async function renderPositionSelectionScreen(targetElement) {
-    // ...
-    const response = await fetch(TEMPLATE_URL); 
-    // ...
-}
 // ------------------------------------------------------------------------
 // ЛОГИКА
 // ------------------------------------------------------------------------
 
 /**
  * Главная функция, которая загружает шаблон, рендерит экран и привязывает события.
+ * 🚨 ИСПРАВЛЕНО: Это ЕДИНСТВЕННОЕ объявление этой функции.
  */
 export async function renderPositionSelectionScreen(targetElement) {
     rootElement = targetElement;
@@ -39,8 +34,8 @@ export async function renderPositionSelectionScreen(targetElement) {
     try {
         const response = await fetch(TEMPLATE_URL);
         if (!response.ok) {
-             rootElement.innerHTML = `<div class="message-box error">Ошибка загрузки шаблона: ${response.status}</div>`;
-             return;
+            rootElement.innerHTML = `<div class="message-box error">Ошибка загрузки шаблона: ${response.status}</div>`;
+            return;
         }
         const html = await response.text();
         
@@ -62,7 +57,7 @@ function initializeUI() {
     // Устанавливаем никнейм из состояния в поле ввода
     const nicknameInput = rootElement.querySelector('#nickname-input');
     if (nicknameInput) {
-         nicknameInput.value = screenState.nickname;
+        nicknameInput.value = screenState.nickname;
     }
     // Если позиция уже была выбрана (например, в состоянии), отображаем ее
     updateSelectedCard(screenState.selectedPositionId);
