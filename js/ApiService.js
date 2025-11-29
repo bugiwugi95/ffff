@@ -142,6 +142,7 @@ export async function fetchDashboard() {
     const response = await fetch(`${BASE_URL}${API_PATH}`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
+        'Accept': 'application/json'
     });
     
     if (!response.ok) {
