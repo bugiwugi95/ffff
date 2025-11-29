@@ -2,10 +2,11 @@
 
 import { fetchDashboard } from './ApiService.js'; 
 
-// 💡 НОВЫЙ ГЛОБАЛЬНЫЙ ФЛАГ для предотвращения повторного вызова fetchDashboard
+// 💡 КРИТИЧЕСКИ ВАЖНЫЙ ФЛАГ: Блокирует повторные вызовы fetchDashboard, 
+// которые могут привести к "паразитному" 401.
 let isDashboardDataLoaded = false; 
 
-// 🔹 Так как dashboard.html лежит в корне проекта
+// 🔹 Путь к HTML-шаблону
 const TEMPLATE_URL = window.BASE_PATH + 'dashboard.html';
 
 /**
@@ -13,15 +14,15 @@ const TEMPLATE_URL = window.BASE_PATH + 'dashboard.html';
  */
 export async function renderPlayerDashboardScreen(targetElement) {
     
-    // 🛑 КРИТИЧНОЕ ИСПРАВЛЕНИЕ: Блокируем, если данные уже загружаются/загружены
+    // 🛑 КРИТИЧНО: Проверка флага перед началом работы
     if (isDashboardDataLoaded) {
-        console.warn("Попытка повторного вызова renderPlayerDashboardScreen. Игнорируем.");
+        console.warn("LOG: DASHBOARD RENDER: Повторный вызов renderPlayerDashboardScreen заблокирован.");
         return;
     }
-    isDashboardDataLoaded = true; // Устанавливаем флаг перед началом
-    // --------------------------------------------------------------------
+    isDashboardDataLoaded = true; // Устанавливаем флаг
+    console.log("LOG: DASHBOARD RENDER: Флаг isDashboardDataLoaded установлен в true.");
 
-    // Показываем спиннер, пока загружаются данные
+    // Показываем спиннер
     targetElement.innerHTML = `
         <div class="p-10 text-center">
             <div class="mt-4 animate-spin h-8 w-8 rounded-full border-4 border-primary border-t-transparent mx-auto"></div>
@@ -33,44 +34,46 @@ export async function renderPlayerDashboardScreen(targetElement) {
 
     try {
         // 1️⃣ Загрузка данных с бэкенда.
-        // Здесь происходит вызов, который мы теперь защитили от дублирования.
+        console.log("LOG: DASHBOARD RENDER: Запускаем fetchDashboard().");
         const dashboardData = await fetchDashboard();
 
         // 2️⃣ Загрузка HTML-шаблона
+        console.log("LOG: DASHBOARD RENDER: Загружаем HTML-шаблон.");
         const response = await fetch(TEMPLATE_URL);
         if (!response.ok) {
+             console.error("LOG: DASHBOARD RENDER: Ошибка загрузки шаблона HTML:", response.status);
             targetElement.innerHTML = `<div class="p-10 text-center text-red-500">
                 Ошибка загрузки шаблона: ${response.status} ${response.statusText}.
-                Проверьте, что dashboard.html лежит в корне проекта.
             </div>`;
             return;
         }
         const html = await response.text();
         
-        // 3️⃣ Вставка шаблона в DOM
+        // 3️⃣ Вставка шаблона и заполнение данными
         targetElement.innerHTML = html;
-        
-        // 4️⃣ Заполнение данными
         fillDashboard(targetElement, dashboardData);
+        console.log("LOG: DASHBOARD RENDER: Успешное заполнение дашборда.");
 
     } catch (error) {
-        console.error("Dashboard render error:", error);
+        console.error("LOG: DASHBOARD RENDER: Общая ошибка рендеринга дашборда:", error);
+        // Показываем сообщение об ошибке
         targetElement.innerHTML = `<div class="p-10 text-center text-red-500">
             Не удалось загрузить дашборд: ${error.message}
         </div>`;
     } finally {
-        // 💡 Очищаем флаг только после ошибки (чтобы можно было попробовать снова)
-        // Если была ошибка (401), токен удаляется, и мы ждем перезапуска.
+        // 💡 Сбрасываем флаг, если произошла ошибка, чтобы при следующем запуске можно было попробовать снова
         if (targetElement.innerHTML.includes('Не удалось загрузить')) {
              isDashboardDataLoaded = false;
+             console.log("LOG: DASHBOARD RENDER: Сброс флага isDashboardDataLoaded после ошибки.");
         }
     }
 }
 
 /**
- * Заполняет DOM-элементы данными из JSON без заглушек.
+ * Функция для заполнения DOM-элементов данными.
  */
 function fillDashboard(rootElement, data) {
+    console.log("LOG: DASHBOARD FILL: Начинаем заполнение данными.");
     // --- 1. Профиль ---
     const username = data.customNickname || data.nickname || "Игрок";
     rootElement.querySelector('#player-nickname').textContent = username;
@@ -117,6 +120,8 @@ function fillDashboard(rootElement, data) {
         });
     }
 }
+
+export { renderPlayerDashboardScreen };
 
 
 
