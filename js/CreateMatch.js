@@ -1,4 +1,4 @@
-import { getAuthToken, handleApiError } from './ApiService.js';
+import { getAuthToken, clearAuthToken } from './ApiService.js';
 
 let isCreateMatchLoaded = false;
 
