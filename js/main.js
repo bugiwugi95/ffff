@@ -31,7 +31,6 @@ console.log("LOG: APP: _appInitialized установлен в true.");
 
 // ------------------------------------------------------------------------
 // ИМПОРТЫ
-// ------------------------------------------------------------------------
 import { renderPositionSelectionScreen } from './PositionSelection.js'; 
 import { renderPlayerDashboardScreen } from './PlayerDashboard.js'; 
 import { renderCreateMatchScreen } from './CreateMatch.js';
@@ -61,7 +60,6 @@ export function navigateTo(screenName) {
         appRoot.innerHTML = '';
         renderFunction(appRoot);
         console.log(`LOG: НАВИГАЦИЯ: Экран ${screenName} отрендерен`);
-        bindBottomNavigation(); // Привязка кнопок после рендера
     } else {
         console.error(`LOG: НАВИГАЦИЯ: Экран не найден: ${screenName}`);
         appRoot.innerHTML = `<div class="p-10 text-center text-red-500">
@@ -71,32 +69,37 @@ export function navigateTo(screenName) {
 }
 
 // ------------------------------------------------------------------------
-// Функция привязки нижней навигации
+// Привязка нижней навигации (один раз)
 function bindBottomNavigation() {
-    console.log("LOG: NAV: bindBottomNavigation вызывается");
+    console.log("LOG: NAV: Привязываем кнопки нижней навигации");
 
-    const navDashboard = document.getElementById('nav-dashboard');
-    const navMatches = document.getElementById('nav-matches');
+    const navDashboard = document.querySelector('nav a:nth-child(1)');
+    const navMatches = document.querySelector('nav a:nth-child(2)');
+    const navProfile = document.querySelector('nav a:nth-child(3)');
 
     if (navDashboard) {
-        navDashboard.onclick = () => {
-            console.log("LOG: NAV: Клик по #nav-dashboard");
+        navDashboard.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log("LOG: NAV: Клик по Dashboard");
             navigateTo('dashboard');
-        };
+        });
     }
-
     if (navMatches) {
-        navMatches.onclick = () => {
-            console.log("LOG: NAV: Клик по #nav-matches");
+        navMatches.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log("LOG: NAV: Клик по Matches");
             navigateTo('matches');
-        };
+        });
+    }
+    if (navProfile) {
+        navProfile.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log("LOG: NAV: Клик по Profile");
+            navigateTo('position-selection'); // например, Profile экран
+        });
     }
 
-    if (!navDashboard && !navMatches) {
-        console.warn("LOG: NAV: Кнопки нижней навигации не найдены на странице.");
-    } else {
-        console.log("LOG: NAV: Кнопки нижней навигации привязаны.");
-    }
+    console.log("LOG: NAV: Кнопки нижней навигации привязаны.");
 }
 
 // ------------------------------------------------------------------------
@@ -175,7 +178,12 @@ async function initializeApp() {
 }
 
 // 🛑 Запуск после загрузки DOM
-document.addEventListener('DOMContentLoaded', initializeApp);
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("LOG: DOMContentLoaded: Инициализация приложения");
+    bindBottomNavigation(); // один раз
+    initializeApp();
+});
+
 
 
 
