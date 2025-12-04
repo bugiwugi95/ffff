@@ -75,21 +75,32 @@ export function navigateTo(screenName) {
 
 // ------------------------------------------------------------------------
 // Привязка нижней навигации
+// ------------------------------------------------------------------------
+// Функция для привязки нижней навигации (кнопка "Матчи")
 function setupBottomNavigation() {
-    const navMatches = document.getElementById('nav-matches');
+    console.log("LOG: NAVIGATION: Запуск функции setupBottomNavigation");
+
+    const navMatches = document.querySelector('#nav-matches'); // ищем кнопку глобально
     if (navMatches) {
-        navMatches.removeEventListener('click', navMatches._handler);
-        navMatches._handler = () => {
-            console.log("LOG: NAVIGATION: Клик по #nav-matches");
-            navigateTo('matches');
-        };
-        navMatches.addEventListener('click', navMatches._handler);
-        console.log("LOG: NAVIGATION: Привязка кнопки #nav-matches выполнена");
+        console.log("LOG: NAVIGATION: Кнопка #nav-matches найдена, привязываем обработчик клика");
+
+        // проверяем, не повешен ли уже обработчик
+        if (!navMatches.dataset.listenerAttached) {
+            navMatches.addEventListener('click', () => {
+                console.log("LOG: NAVIGATION: Клик по кнопке 'Матчи'");
+                navigateTo('matches');
+            });
+            navMatches.dataset.listenerAttached = "true"; // флаг, чтобы не вешать повторно
+            console.log("LOG: NAVIGATION: Обработчик на кнопку 'Матчи' успешно привязан");
+        } else {
+            console.log("LOG: NAVIGATION: Обработчик на кнопку 'Матчи' уже был привязан");
+        }
     } else {
-        // Кнопка ещё не в DOM, проверяем через 200ms
+        console.warn("LOG: NAVIGATION: Кнопка #nav-matches не найдена, повторная проверка через 200ms");
         setTimeout(setupBottomNavigation, 200);
     }
 }
+
 
 // ------------------------------------------------------------------------
 // Сброс приложения
