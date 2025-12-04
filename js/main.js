@@ -3,7 +3,7 @@
 // 🚨 КРИТИЧЕСКАЯ БЛОКИРОВКА ПОВТОРНОЙ ЗАГРУЗКИ МОДУЛЯ (Защита от браузера/среды)
 if (window._mainModuleLoaded) {
     console.warn("LOG: MODULE BLOCK: Повторная загрузка модуля main.js заблокирована.");
-    throw new Error('Модуль уже загружен.'); 
+    throw new Error('Модуль уже загружен.'); 
 }
 window._mainModuleLoaded = true;
 console.log("LOG: MODULE BLOCK: _mainModuleLoaded установлен в true.");
@@ -19,28 +19,28 @@ console.log("LOG: APP BLOCK: _appInitialized установлен в true.");
 // 🚨 ИНИЦИАЛИЗАЦИЯ BASE_PATH
 (function() {
     function getBasePath() {
-        let path = window.location.pathname; 
-        path = path.substring(0, path.lastIndexOf('/')); 
+        let path = window.location.pathname; 
+        path = path.substring(0, path.lastIndexOf('/')); 
         if (path.endsWith('/js')) {
-            path = path.substring(0, path.lastIndexOf('/')); 
+            path = path.substring(0, path.lastIndexOf('/')); 
         }
         if (!path.endsWith('/')) {
             path = path + '/';
         }
-        return path; 
+        return path; 
     }
     
-    window.BASE_PATH = getBasePath(); 
+    window.BASE_PATH = getBasePath(); 
     console.log("LOG: PATH: BASE_PATH инициализирован:", window.BASE_PATH);
 })();
 
 // ------------------------------------------------------------------------
 // ИМПОРТЫ МОДУЛЕЙ
 // ------------------------------------------------------------------------
-
-import { renderPositionSelectionScreen } from './PositionSelection.js'; 
-import { renderPlayerDashboardScreen } from './PlayerDashboard.js'; 
+import { renderPositionSelectionScreen } from './PositionSelection.js'; 
+import { renderPlayerDashboardScreen } from './PlayerDashboard.js'; 
 import { renderCreateMatchScreen } from './CreateMatch.js';
+import { renderMatchScreen } from './MatchScreen.js'; // <-- новый экран
 import { authenticateTelegram, clearAuthToken } from './ApiService.js'; 
 
 const appRoot = document.getElementById('app-root');
@@ -49,6 +49,7 @@ const screens = {
     'position-selection': renderPositionSelectionScreen,
     'dashboard': renderPlayerDashboardScreen,
     'create-match': renderCreateMatchScreen,
+    'matches': renderMatchScreen, // <-- добавили экран матчей
 };
 
 export function navigateTo(screenName) {
@@ -60,7 +61,7 @@ export function navigateTo(screenName) {
 
     const renderFunction = screens[screenName];
     if (renderFunction) {
-        appRoot.innerHTML = ''; 
+        appRoot.innerHTML = ''; 
         renderFunction(appRoot);
     } else {
         console.error(`LOG: NAVIGATION: Экран не найден: ${screenName}`);
@@ -68,7 +69,16 @@ export function navigateTo(screenName) {
     }
 }
 
+// ------------------------------------------------------------------------
+// ПРИВЯЗКА НИЖНЕЙ НАВИГАЦИИ
+// ------------------------------------------------------------------------
+document.getElementById('nav-matches')?.addEventListener('click', () => {
+    navigateTo('matches');
+});
+
+// ------------------------------------------------------------------------
 // Функция для сброса состояния
+// ------------------------------------------------------------------------
 export function resetApp() {
     console.warn("LOG: RESET: Сброс локального хранилища и флагов.");
     localStorage.removeItem('profileSetupNeeded');
@@ -85,7 +95,6 @@ export function resetApp() {
  */
 async function initializeApp() {
     
-    // Повторная проверка флага, только если он был сброшен через resetApp
     if (window._appInitialized === false) { 
          window._appInitialized = true;
     }
@@ -99,9 +108,8 @@ async function initializeApp() {
         </div>
     `;
 
-    const initData = window.Telegram?.WebApp?.initData; 
+    const initData = window.Telegram?.WebApp?.initData; 
     
-    // 🛑 ЛОГИКА DEBUG-СБРОСА
     const urlParams = new URLSearchParams(window.location.search);
     const shouldReset = urlParams.get('reset') === 'true';
 
@@ -127,10 +135,8 @@ async function initializeApp() {
 
     try {
         console.log("LOG: INIT: Начинаем аутентификацию с InitData.");
-        // ⭐️ Шаг 1: АУТЕНТИФИКАЦИЯ
         const authResponse = await authenticateTelegram(initData);
         
-        // ⭐️ Шаг 2: НАВИГАЦИЯ
         if (authResponse.requiresProfileSetup) {
             console.log("LOG: INIT: Требуется настройка профиля. Переход на position-selection.");
             navigateTo('position-selection');
@@ -149,3 +155,4 @@ async function initializeApp() {
 
 // 🛑 ФИНАЛЬНЫЙ ВЫЗОВ: Ждем загрузки DOM
 document.addEventListener('DOMContentLoaded', initializeApp);
+
