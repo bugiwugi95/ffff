@@ -76,50 +76,71 @@ export async function renderPlayerDashboardScreen(targetElement) {
  */
 function fillDashboard(rootElement, data) {
     console.log("LOG: DASHBOARD FILL: Начинаем заполнение данными.");
-    // --- 1. Профиль ---
-    const username = data.customNickname || data.nickname || "Игрок";
-    rootElement.querySelector('#player-nickname').textContent = username;
 
-    const position = localStorage.getItem('player_position_display') || data.position || "";
-    const teamName = data.teamName || "";
-    rootElement.querySelector('#player-position').textContent = teamName ? `${position} • ${teamName}` : position;
+    const safeQuery = (selector) => {
+        const el = rootElement.querySelector(selector);
+        if (!el) console.warn(`LOG: DASHBOARD FILL: Элемент "${selector}" не найден.`);
+        return el;
+    };
+
+    // --- 1. Профиль ---
+    const usernameEl = safeQuery('#player-nickname');
+    if (usernameEl) usernameEl.textContent = data.customNickname || data.nickname || "Игрок";
+
+    const positionEl = safeQuery('#player-position');
+    if (positionEl) {
+        const position = localStorage.getItem('player_position_display') || data.position || "";
+        const teamName = data.teamName || "";
+        positionEl.textContent = teamName ? `${position} • ${teamName}` : position;
+    }
 
     // --- 2. Статистика ---
-    rootElement.querySelector('#stat-goals').textContent = data.seasonGoals ?? '0';
-    rootElement.querySelector('#stat-assists').textContent = data.seasonAssists ?? '0';
-    rootElement.querySelector('#stat-matches').textContent = data.seasonMatches ?? '0';
+    const goalsEl = safeQuery('#stat-goals');
+    if (goalsEl) goalsEl.textContent = data.seasonGoals ?? '0';
+    const assistsEl = safeQuery('#stat-assists');
+    if (assistsEl) assistsEl.textContent = data.seasonAssists ?? '0';
+    const matchesEl = safeQuery('#stat-matches');
+    if (matchesEl) matchesEl.textContent = data.seasonMatches ?? '0';
 
     // --- 3. Ближайший матч ---
-    const matchCard = rootElement.querySelector('#upcoming-match-card');
-    const emptyState = rootElement.querySelector('#empty-match-state');
+    const matchCard = safeQuery('#upcoming-match-card');
+    const emptyState = safeQuery('#empty-match-state');
+    if (matchCard && emptyState) {
+        if (data.nextMatch && data.nextMatch.opponentTeamName !== "Нет матча") {
+            matchCard.classList.remove('hidden');
+            emptyState.classList.add('hidden');
 
-    if (data.nextMatch && data.nextMatch.opponentTeamName !== "Нет матча") {
-        matchCard.classList.remove('hidden');
-        emptyState.classList.add('hidden');
-
-        rootElement.querySelector('#opponent-name').textContent = data.nextMatch.opponentTeamName || '';
-        rootElement.querySelector('#match-date').textContent = data.nextMatch.matchDate || '';
-        rootElement.querySelector('#match-time').textContent = data.nextMatch.matchTime || '';
-        rootElement.querySelector('#match-location').textContent = data.nextMatch.location || '';
-    } else {
-        matchCard.classList.add('hidden');
-        emptyState.classList.remove('hidden');
+            const opponentEl = safeQuery('#opponent-name');
+            if (opponentEl) opponentEl.textContent = data.nextMatch.opponentTeamName || '';
+            const dateEl = safeQuery('#match-date');
+            if (dateEl) dateEl.textContent = data.nextMatch.matchDate || '';
+            const timeEl = safeQuery('#match-time');
+            if (timeEl) timeEl.textContent = data.nextMatch.matchTime || '';
+            const locationEl = safeQuery('#match-location');
+            if (locationEl) locationEl.textContent = data.nextMatch.location || '';
+        } else {
+            matchCard.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+        }
     }
 
     // --- 4. Прогресс команды ---
-    const chemistryScore = data.teamProgress?.chemistryScore ?? 0;
-    rootElement.querySelector('#team-chemistry').textContent = `${chemistryScore} / 10`;
-    rootElement.querySelector('#chemistry-bar').style.width = `${(chemistryScore * 10).toFixed(0)}%`;
+    const chemistryEl = safeQuery('#team-chemistry');
+    if (chemistryEl) chemistryEl.textContent = `${data.teamProgress?.chemistryScore ?? 0} / 10`;
+    const chemistryBar = safeQuery('#chemistry-bar');
+    if (chemistryBar) chemistryBar.style.width = `${((data.teamProgress?.chemistryScore ?? 0) * 10).toFixed(0)}%`;
 
     // --- 5. Последние результаты ---
-    const resultsContainer = rootElement.querySelector('#results-container');
-    resultsContainer.innerHTML = '';
-    if (Array.isArray(data.teamProgress?.recentResults)) {
-        data.teamProgress.recentResults.forEach(result => {
-            resultsContainer.insertAdjacentHTML('beforeend', `<div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-gray-200 px-4">
-                <p class="text-gray-700 text-sm font-medium leading-normal">${result}</p>
-            </div>`);
-        });
+    const resultsContainer = safeQuery('#results-container');
+    if (resultsContainer) {
+        resultsContainer.innerHTML = '';
+        if (Array.isArray(data.teamProgress?.recentResults)) {
+            data.teamProgress.recentResults.forEach(result => {
+                resultsContainer.insertAdjacentHTML('beforeend', `<div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-gray-200 px-4">
+                    <p class="text-gray-700 text-sm font-medium leading-normal">${result}</p>
+                </div>`);
+            });
+        }
     }
 }
 
