@@ -1,42 +1,41 @@
 // /js/main.js
 
-// 🚨 КРИТИЧЕСКАЯ БЛОКИРОВКА ПОВТОРНОЙ ЗАГРУЗКИ МОДУЛЯ
+// 🚨 Блокировка повторной загрузки модуля
 if (window._mainModuleLoaded) {
-    console.warn("LOG: MODULE BLOCK: Повторная загрузка модуля main.js заблокирована.");
-    throw new Error('Модуль уже загружен.'); 
+    console.warn("LOG: MODULE BLOCK: Модуль main.js уже загружен.");
+    throw new Error('Модуль уже загружен.');
 }
 window._mainModuleLoaded = true;
-console.log("LOG: MODULE BLOCK: _mainModuleLoaded установлен в true.");
+console.log("LOG: MODULE BLOCK: _mainModuleLoaded = true");
 
-// 🛑 ГЛОБАЛЬНАЯ ЗАЩИТА ОТ ДВОЙНОГО ВЫЗОВА initializeApp
+// 🛑 Глобальная защита от двойного вызова initializeApp
 if (window._appInitialized) {
-    console.warn("LOG: APP BLOCK: Попытка повторного запуска initializeApp заблокирована.");
+    console.warn("LOG: APP BLOCK: initializeApp уже был вызван.");
 }
 window._appInitialized = true;
-console.log("LOG: APP BLOCK: _appInitialized установлен в true.");
+console.log("LOG: APP BLOCK: _appInitialized = true");
 
 // -------------------------------------------------------------
 // BASE_PATH
 (function() {
     function getBasePath() {
-        let path = window.location.pathname; 
-        path = path.substring(0, path.lastIndexOf('/')); 
-        if (path.endsWith('/js')) path = path.substring(0, path.lastIndexOf('/')); 
-        if (!path.endsWith('/')) path = path + '/';
-        return path; 
+        let path = window.location.pathname;
+        path = path.substring(0, path.lastIndexOf('/'));
+        if (path.endsWith('/js')) path = path.substring(0, path.lastIndexOf('/'));
+        if (!path.endsWith('/')) path += '/';
+        return path;
     }
-    window.BASE_PATH = getBasePath(); 
-    console.log("LOG: PATH: BASE_PATH инициализирован:", window.BASE_PATH);
+    window.BASE_PATH = getBasePath();
+    console.log("LOG: PATH: BASE_PATH =", window.BASE_PATH);
 })();
 
 // ------------------------------------------------------------------------
-// ИМПОРТЫ МОДУЛЕЙ
-// ------------------------------------------------------------------------
+// Импорты
 import { renderPositionSelectionScreen } from './PositionSelection.js'; 
 import { renderPlayerDashboardScreen } from './PlayerDashboard.js'; 
 import { renderCreateMatchScreen } from './CreateMatch.js';
 import { MatchesScreen } from './MatchesScreen.js';
-import { authenticateTelegram, clearAuthToken } from './ApiService.js'; 
+import { authenticateTelegram, clearAuthToken } from './ApiService.js';
 
 const appRoot = document.getElementById('app-root');
 
@@ -47,56 +46,64 @@ const screens = {
     'matches': MatchesScreen,
 };
 
+// ------------------------------------------------------------------------
+// Навигация между экранами
 export function navigateTo(screenName) {
-    console.log(`LOG: NAVIGATION: Переход на экран: ${screenName}`);
+    console.log("LOG: NAVIGATION: Переход на экран", screenName);
+
     if (!appRoot) {
-        console.error('LOG: NAVIGATION: Root element #app-root не найден.');
+        console.error("LOG: NAVIGATION: #app-root не найден");
         return;
     }
 
     const renderFunction = screens[screenName];
-    if (renderFunction) {
-        appRoot.innerHTML = ''; 
-        renderFunction(appRoot);
-        console.log(`LOG: NAVIGATION: Экран ${screenName} отрендерен`);
-    } else {
-        console.error(`LOG: NAVIGATION: Экран не найден: ${screenName}`);
+    if (!renderFunction) {
+        console.error("LOG: NAVIGATION: Экран не найден:", screenName);
         appRoot.innerHTML = `<div class="p-10 text-center text-red-500">
             Ошибка навигации. Экран "${screenName}" не найден.
         </div>`;
+        return;
     }
+
+    appRoot.innerHTML = '';
+    const rendered = renderFunction(appRoot);
+    console.log("LOG: NAVIGATION: Экран", screenName, "отрендерен");
+
+    // После рендера привязываем нижнюю навигацию
+    setupBottomNavigation();
 }
 
 // ------------------------------------------------------------------------
-// Функция для привязки нижней навигации (фикс клика по матч)
+// Привязка нижней навигации
 function setupBottomNavigation() {
     const navMatches = document.getElementById('nav-matches');
     if (navMatches) {
-        console.log("LOG: NAVIGATION: Привязка кнопки #nav-matches");
-        navMatches.addEventListener('click', () => {
+        navMatches.removeEventListener('click', navMatches._handler);
+        navMatches._handler = () => {
             console.log("LOG: NAVIGATION: Клик по #nav-matches");
             navigateTo('matches');
-        });
+        };
+        navMatches.addEventListener('click', navMatches._handler);
+        console.log("LOG: NAVIGATION: Привязка кнопки #nav-matches выполнена");
     } else {
-        console.warn("LOG: NAVIGATION: Кнопка #nav-matches не найдена, повторная проверка через 200ms");
+        // Кнопка ещё не в DOM, проверяем через 200ms
         setTimeout(setupBottomNavigation, 200);
     }
 }
 
 // ------------------------------------------------------------------------
-// Сброс состояния приложения
+// Сброс приложения
 export function resetApp() {
-    console.warn("LOG: RESET: Сброс локального хранилища и флагов.");
+    console.warn("LOG: RESET: Сброс состояния приложения");
     localStorage.removeItem('profileSetupNeeded');
     localStorage.removeItem('player_position_display');
-    clearAuthToken(); 
-    window._appInitialized = false; 
+    clearAuthToken();
+    window._appInitialized = false;
     window._mainModuleLoaded = false;
 }
 
-/**
- * ⭐️ Инициализация приложения
- */
+// ------------------------------------------------------------------------
+// Инициализация приложения
 async function initializeApp() {
     console.log("LOG: INIT: Старт initializeApp");
 
@@ -114,21 +121,21 @@ async function initializeApp() {
         </div>
     `;
 
-    const initData = window.Telegram?.WebApp?.initData; 
+    const initData = window.Telegram?.WebApp?.initData;
     const urlParams = new URLSearchParams(window.location.search);
     const shouldReset = urlParams.get('reset') === 'true';
 
     if (shouldReset) {
         resetApp();
-        console.log("LOG: INIT: Локальное хранилище сброшено.");
+        console.log("LOG: INIT: Локальное хранилище сброшено");
         appRoot.innerHTML = `<div class="p-10 text-center text-primary">
-            ✅ Настройки сброшены. Обновите страницу (без ?reset=true).
+            ✅ Настройки сброшены. Обновите страницу (без ?reset=true)
         </div>`;
         return;
     }
 
     if (!initData) {
-        console.warn("LOG: INIT: InitData не найдена. Режим разработки.");
+        console.warn("LOG: INIT: InitData отсутствует, режим разработки");
         const setupNeeded = localStorage.getItem('profileSetupNeeded');
         if (setupNeeded === 'false') {
             navigateTo('dashboard');
@@ -142,16 +149,14 @@ async function initializeApp() {
     try {
         console.log("LOG: INIT: Аутентификация с initData");
         const authResponse = await authenticateTelegram(initData);
-        
+
         if (authResponse.requiresProfileSetup) {
-            console.log("LOG: INIT: Требуется настройка профиля, переход на position-selection");
+            console.log("LOG: INIT: Требуется настройка профиля");
             navigateTo('position-selection');
         } else {
             console.log("LOG: INIT: Профиль настроен, переход на dashboard");
             navigateTo('dashboard');
         }
-
-        setupBottomNavigation();
 
     } catch (error) {
         console.error("LOG: INIT FATAL: Ошибка аутентификации", error);
@@ -161,6 +166,7 @@ async function initializeApp() {
     }
 }
 
-// 🛑 ФИНАЛЬНЫЙ ВЫЗОВ
+// 🛑 Старт приложения после полной загрузки DOM
 document.addEventListener('DOMContentLoaded', initializeApp);
+
 
