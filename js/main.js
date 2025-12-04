@@ -15,20 +15,6 @@ if (window._appInitialized) {
 window._appInitialized = true;
 console.log("LOG: APP: _appInitialized установлен в true.");
 
-// -------------------------------------------------------------
-// BASE_PATH
-(function() {
-    function getBasePath() {
-        let path = window.location.pathname; 
-        path = path.substring(0, path.lastIndexOf('/')); 
-        if (path.endsWith('/js')) path = path.substring(0, path.lastIndexOf('/')); 
-        if (!path.endsWith('/')) path = path + '/';
-        return path; 
-    }
-    window.BASE_PATH = getBasePath(); 
-    console.log("LOG: PATH: BASE_PATH инициализирован:", window.BASE_PATH);
-})();
-
 // ------------------------------------------------------------------------
 // ИМПОРТЫ
 import { renderPositionSelectionScreen } from './PositionSelection.js'; 
@@ -60,17 +46,18 @@ export function navigateTo(screenName) {
         appRoot.innerHTML = '';
         renderFunction(appRoot);
         console.log(`LOG: НАВИГАЦИЯ: Экран ${screenName} отрендерен`);
-        bindBottomNavigation(); // Привязка кнопок после рендера
     } else {
         console.error(`LOG: НАВИГАЦИЯ: Экран не найден: ${screenName}`);
         appRoot.innerHTML = `<div class="p-10 text-center text-red-500">
             Ошибка навигации. Экран "${screenName}" не найден.
         </div>`;
     }
+
+    setActiveNav(screenName); // подсветка
 }
 
 // ------------------------------------------------------------------------
-// Привязка нижней навигации
+// Привязка нижней навигации (один раз)
 function bindBottomNavigation() {
     console.log("LOG: NAV: bindBottomNavigation вызывается");
 
@@ -78,38 +65,22 @@ function bindBottomNavigation() {
     const navMatches = document.querySelector('nav a:nth-child(2)');
     const navProfile = document.querySelector('nav a:nth-child(3)');
 
-    if (navDashboard) {
-        navDashboard.onclick = (e) => {
-            e.preventDefault();
-            console.log("LOG: NAV: Клик по Dashboard");
-            navigateTo('dashboard');
-            setActiveNav(navDashboard);
-        };
-    }
-    if (navMatches) {
-        navMatches.onclick = (e) => {
-            e.preventDefault();
-            console.log("LOG: NAV: Клик по Matches");
-            navigateTo('matches');
-            setActiveNav(navMatches);
-        };
-    }
-    if (navProfile) {
-        navProfile.onclick = (e) => {
-            e.preventDefault();
-            console.log("LOG: NAV: Клик по Profile (можно добавить отдельный экран)");
-            setActiveNav(navProfile);
-        };
-    }
+    if (navDashboard) navDashboard.onclick = (e) => { e.preventDefault(); navigateTo('dashboard'); };
+    if (navMatches) navMatches.onclick = (e) => { e.preventDefault(); navigateTo('matches'); };
+    if (navProfile) navProfile.onclick = (e) => { e.preventDefault(); navigateTo('position-selection'); };
 
     console.log("LOG: NAV: Нижняя навигация привязана.");
 }
 
 // ------------------------------------------------------------------------
 // Подсветка активного пункта
-function setActiveNav(activeElement) {
+function setActiveNav(screenName) {
     document.querySelectorAll('nav a').forEach(el => el.classList.remove('text-primary'));
-    activeElement.classList.add('text-primary');
+    switch(screenName) {
+        case 'dashboard': document.querySelector('nav a:nth-child(1)').classList.add('text-primary'); break;
+        case 'matches': document.querySelector('nav a:nth-child(2)').classList.add('text-primary'); break;
+        case 'position-selection': document.querySelector('nav a:nth-child(3)').classList.add('text-primary'); break;
+    }
 }
 
 // ------------------------------------------------------------------------
@@ -133,14 +104,7 @@ async function initializeApp() {
         return;
     }
 
-    appRoot.innerHTML = `
-        <div class="p-10 text-center min-h-screen flex flex-col justify-center items-center">
-            <div class="mt-4 animate-spin h-8 w-8 rounded-full border-4 border-primary border-t-transparent mx-auto"></div>
-            <p class="mt-2 text-slate-500 dark:text-slate-400">
-                Подключение к бэкенду и авторизация...
-            </p>
-        </div>
-    `;
+    bindBottomNavigation(); // привязка навигации один раз
 
     const initData = window.Telegram?.WebApp?.initData; 
     const urlParams = new URLSearchParams(window.location.search);
@@ -157,7 +121,7 @@ async function initializeApp() {
 
     try {
         if (!initData) {
-            console.warn("LOG: INIT: InitData не найдена. Режим разработки.");
+            console.log("LOG: INIT: Режим разработки (initData нет)");
             const setupNeeded = localStorage.getItem('profileSetupNeeded');
             if (setupNeeded === 'false') {
                 navigateTo('dashboard');
@@ -173,7 +137,6 @@ async function initializeApp() {
                 navigateTo('dashboard');
             }
         }
-        bindBottomNavigation();
     } catch (error) {
         console.error("LOG: INIT FATAL: Ошибка инициализации", error);
         appRoot.innerHTML = `<div class="p-10 text-center text-red-500">
@@ -184,6 +147,7 @@ async function initializeApp() {
 
 // 🛑 Запуск после загрузки DOM
 document.addEventListener('DOMContentLoaded', initializeApp);
+
 
 
 
