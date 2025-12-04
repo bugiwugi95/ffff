@@ -47,7 +47,7 @@ const screens = {
 };
 
 // ------------------------------------------------------------------------
-// Функция навигации
+// Навигация
 export function navigateTo(screenName) {
     console.log(`LOG: НАВИГАЦИЯ: Переход на экран: ${screenName}`);
     if (!appRoot) {
@@ -60,6 +60,7 @@ export function navigateTo(screenName) {
         appRoot.innerHTML = '';
         renderFunction(appRoot);
         console.log(`LOG: НАВИГАЦИЯ: Экран ${screenName} отрендерен`);
+        bindBottomNavigation(); // Привязка кнопок после рендера
     } else {
         console.error(`LOG: НАВИГАЦИЯ: Экран не найден: ${screenName}`);
         appRoot.innerHTML = `<div class="p-10 text-center text-red-500">
@@ -69,37 +70,46 @@ export function navigateTo(screenName) {
 }
 
 // ------------------------------------------------------------------------
-// Привязка нижней навигации (один раз)
+// Привязка нижней навигации
 function bindBottomNavigation() {
-    console.log("LOG: NAV: Привязываем кнопки нижней навигации");
+    console.log("LOG: NAV: bindBottomNavigation вызывается");
 
     const navDashboard = document.querySelector('nav a:nth-child(1)');
     const navMatches = document.querySelector('nav a:nth-child(2)');
     const navProfile = document.querySelector('nav a:nth-child(3)');
 
     if (navDashboard) {
-        navDashboard.addEventListener('click', (e) => {
+        navDashboard.onclick = (e) => {
             e.preventDefault();
             console.log("LOG: NAV: Клик по Dashboard");
             navigateTo('dashboard');
-        });
+            setActiveNav(navDashboard);
+        };
     }
     if (navMatches) {
-        navMatches.addEventListener('click', (e) => {
+        navMatches.onclick = (e) => {
             e.preventDefault();
             console.log("LOG: NAV: Клик по Matches");
             navigateTo('matches');
-        });
+            setActiveNav(navMatches);
+        };
     }
     if (navProfile) {
-        navProfile.addEventListener('click', (e) => {
+        navProfile.onclick = (e) => {
             e.preventDefault();
-            console.log("LOG: NAV: Клик по Profile");
-            navigateTo('position-selection'); // например, Profile экран
-        });
+            console.log("LOG: NAV: Клик по Profile (можно добавить отдельный экран)");
+            setActiveNav(navProfile);
+        };
     }
 
-    console.log("LOG: NAV: Кнопки нижней навигации привязаны.");
+    console.log("LOG: NAV: Нижняя навигация привязана.");
+}
+
+// ------------------------------------------------------------------------
+// Подсветка активного пункта
+function setActiveNav(activeElement) {
+    document.querySelectorAll('nav a').forEach(el => el.classList.remove('text-primary'));
+    activeElement.classList.add('text-primary');
 }
 
 // ------------------------------------------------------------------------
@@ -113,9 +123,8 @@ export function resetApp() {
     window._mainModuleLoaded = false;
 }
 
-/**
- * ⭐️ Инициализация приложения
- */
+// ------------------------------------------------------------------------
+// Инициализация приложения
 async function initializeApp() {
     console.log("LOG: INIT: Старт initializeApp");
 
@@ -146,31 +155,27 @@ async function initializeApp() {
         return;
     }
 
-    if (!initData) {
-        console.warn("LOG: INIT: InitData не найдена. Режим разработки.");
-        const setupNeeded = localStorage.getItem('profileSetupNeeded');
-        if (setupNeeded === 'false') {
-            navigateTo('dashboard');
-        } else {
-            navigateTo('position-selection');
-        }
-        return;
-    }
-
     try {
-        console.log("LOG: INIT: Аутентификация с initData");
-        const authResponse = await authenticateTelegram(initData);
-
-        if (authResponse.requiresProfileSetup) {
-            console.log("LOG: INIT: Требуется настройка профиля, переход на position-selection");
-            navigateTo('position-selection');
+        if (!initData) {
+            console.warn("LOG: INIT: InitData не найдена. Режим разработки.");
+            const setupNeeded = localStorage.getItem('profileSetupNeeded');
+            if (setupNeeded === 'false') {
+                navigateTo('dashboard');
+            } else {
+                navigateTo('position-selection');
+            }
         } else {
-            console.log("LOG: INIT: Профиль настроен, переход на dashboard");
-            navigateTo('dashboard');
+            console.log("LOG: INIT: Аутентификация с initData");
+            const authResponse = await authenticateTelegram(initData);
+            if (authResponse.requiresProfileSetup) {
+                navigateTo('position-selection');
+            } else {
+                navigateTo('dashboard');
+            }
         }
-
+        bindBottomNavigation();
     } catch (error) {
-        console.error("LOG: INIT FATAL: Ошибка аутентификации", error);
+        console.error("LOG: INIT FATAL: Ошибка инициализации", error);
         appRoot.innerHTML = `<div class="p-10 text-center text-red-500">
             Ошибка авторизации: ${error.message}
         </div>`;
@@ -178,11 +183,7 @@ async function initializeApp() {
 }
 
 // 🛑 Запуск после загрузки DOM
-document.addEventListener('DOMContentLoaded', () => {
-    console.log("LOG: DOMContentLoaded: Инициализация приложения");
-    bindBottomNavigation(); // один раз
-    initializeApp();
-});
+document.addEventListener('DOMContentLoaded', initializeApp);
 
 
 
