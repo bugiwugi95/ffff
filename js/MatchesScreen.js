@@ -1,4 +1,5 @@
-import { CreateMatch } from './CreateMatch.js';
+import { renderCreateMatchScreen } from './CreateMatch.js';
+
 
 export function MatchesScreen() {
     const container = document.createElement('div');
@@ -30,8 +31,10 @@ export function MatchesScreen() {
 
     // Обработчики кнопок
     createMatchBtn.addEventListener('click', () => {
-        contentContainer.innerHTML = '';
-        contentContainer.appendChild(CreateMatch());
+    contentContainer.innerHTML = '';
+    renderCreateMatchScreen(contentContainer);
+});
+
     });
 
     historyBtn.addEventListener('click', () => {
