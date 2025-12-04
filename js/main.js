@@ -39,14 +39,16 @@ console.log("LOG: APP BLOCK: _appInitialized установлен в true.");
 // ------------------------------------------------------------------------
 
 import { renderPositionSelectionScreen } from './PositionSelection.js'; 
-import { renderPlayerDashboardScreen } from './PlayerDashboard.js';     
+import { renderPlayerDashboardScreen } from './PlayerDashboard.js'; 
+import { renderCreateMatchScreen } from './CreateMatch.js';
 import { authenticateTelegram, clearAuthToken } from './ApiService.js'; 
 
 const appRoot = document.getElementById('app-root');
 
 const screens = {
     'position-selection': renderPositionSelectionScreen,
-    'dashboard': renderPlayerDashboardScreen, 
+    'dashboard': renderPlayerDashboardScreen,
+    'create-match': renderCreateMatchScreen,
 };
 
 export function navigateTo(screenName) {
