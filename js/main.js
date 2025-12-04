@@ -3,7 +3,7 @@
 // 🚨 Блокировка повторной загрузки модуля
 if (window._mainModuleLoaded) {
     console.warn("LOG: МОДУЛЬ: main.js уже загружен, блокируем повторную загрузку.");
-    throw new Error('Модуль уже загружен.'); 
+    throw new Error('Модуль уже загружен.');
 }
 window._mainModuleLoaded = true;
 console.log("LOG: МОДУЛЬ: _mainModuleLoaded установлен в true.");
@@ -14,6 +14,20 @@ if (window._appInitialized) {
 }
 window._appInitialized = true;
 console.log("LOG: APP: _appInitialized установлен в true.");
+
+// -------------------------------------------------------------
+// BASE_PATH
+(function() {
+    function getBasePath() {
+        let path = window.location.pathname; 
+        path = path.substring(0, path.lastIndexOf('/')); 
+        if (path.endsWith('/js')) path = path.substring(0, path.lastIndexOf('/')); 
+        if (!path.endsWith('/')) path = path + '/';
+        return path; 
+    }
+    window.BASE_PATH = getBasePath(); 
+    console.log("LOG: PATH: BASE_PATH инициализирован:", window.BASE_PATH);
+})();
 
 // ------------------------------------------------------------------------
 // ИМПОРТЫ
@@ -44,43 +58,70 @@ export function navigateTo(screenName) {
     const renderFunction = screens[screenName];
     if (renderFunction) {
         appRoot.innerHTML = '';
-        renderFunction(appRoot);
-        console.log(`LOG: НАВИГАЦИЯ: Экран ${screenName} отрендерен`);
+        renderFunction(appRoot).then(() => {
+            console.log(`LOG: НАВИГАЦИЯ: Экран ${screenName} отрендерен`);
+            bindBottomNavigation(); // Привязка кнопок после рендера
+        }).catch(err => {
+            console.error("LOG: ERROR при рендере экрана:", err);
+            appRoot.innerHTML = `<div class="p-10 text-center text-red-500">
+                Ошибка при рендере экрана "${screenName}"
+            </div>`;
+        });
     } else {
         console.error(`LOG: НАВИГАЦИЯ: Экран не найден: ${screenName}`);
         appRoot.innerHTML = `<div class="p-10 text-center text-red-500">
             Ошибка навигации. Экран "${screenName}" не найден.
         </div>`;
     }
-
-    setActiveNav(screenName); // подсветка
 }
 
 // ------------------------------------------------------------------------
-// Привязка нижней навигации (один раз)
+// Привязка нижней навигации
 function bindBottomNavigation() {
     console.log("LOG: NAV: bindBottomNavigation вызывается");
 
-    const navDashboard = document.querySelector('nav a:nth-child(1)');
-    const navMatches = document.querySelector('nav a:nth-child(2)');
-    const navProfile = document.querySelector('nav a:nth-child(3)');
+    const navLinks = document.querySelectorAll('nav a');
+    if (!navLinks || navLinks.length === 0) {
+        console.warn("LOG: NAV: nav ссылки не найдены, пропускаем привязку.");
+        return;
+    }
 
-    if (navDashboard) navDashboard.onclick = (e) => { e.preventDefault(); navigateTo('dashboard'); };
-    if (navMatches) navMatches.onclick = (e) => { e.preventDefault(); navigateTo('matches'); };
-    if (navProfile) navProfile.onclick = (e) => { e.preventDefault(); navigateTo('position-selection'); };
+    const [navDashboard, navMatches, navProfile] = navLinks;
+
+    if (navDashboard) {
+        navDashboard.onclick = (e) => {
+            e.preventDefault();
+            console.log("LOG: NAV: Клик по Dashboard");
+            navigateTo('dashboard');
+            setActiveNavByElement(navDashboard);
+        };
+    }
+    if (navMatches) {
+        navMatches.onclick = (e) => {
+            e.preventDefault();
+            console.log("LOG: NAV: Клик по Matches");
+            navigateTo('matches');
+            setActiveNavByElement(navMatches);
+        };
+    }
+    if (navProfile) {
+        navProfile.onclick = (e) => {
+            e.preventDefault();
+            console.log("LOG: NAV: Клик по Profile");
+            setActiveNavByElement(navProfile);
+        };
+    }
 
     console.log("LOG: NAV: Нижняя навигация привязана.");
 }
 
 // ------------------------------------------------------------------------
 // Подсветка активного пункта
-function setActiveNav(screenName) {
-    document.querySelectorAll('nav a').forEach(el => el.classList.remove('text-primary'));
-    switch(screenName) {
-        case 'dashboard': document.querySelector('nav a:nth-child(1)').classList.add('text-primary'); break;
-        case 'matches': document.querySelector('nav a:nth-child(2)').classList.add('text-primary'); break;
-        case 'position-selection': document.querySelector('nav a:nth-child(3)').classList.add('text-primary'); break;
-    }
+function setActiveNavByElement(activeElement) {
+    const navLinks = document.querySelectorAll('nav a');
+    if (!navLinks || navLinks.length === 0 || !activeElement) return;
+    navLinks.forEach(el => el.classList.remove('text-primary'));
+    activeElement.classList.add('text-primary');
 }
 
 // ------------------------------------------------------------------------
@@ -104,7 +145,14 @@ async function initializeApp() {
         return;
     }
 
-    bindBottomNavigation(); // привязка навигации один раз
+    appRoot.innerHTML = `
+        <div class="p-10 text-center min-h-screen flex flex-col justify-center items-center">
+            <div class="mt-4 animate-spin h-8 w-8 rounded-full border-4 border-primary border-t-transparent mx-auto"></div>
+            <p class="mt-2 text-slate-500 dark:text-slate-400">
+                Подключение к бэкенду и авторизация...
+            </p>
+        </div>
+    `;
 
     const initData = window.Telegram?.WebApp?.initData; 
     const urlParams = new URLSearchParams(window.location.search);
@@ -121,7 +169,7 @@ async function initializeApp() {
 
     try {
         if (!initData) {
-            console.log("LOG: INIT: Режим разработки (initData нет)");
+            console.warn("LOG: INIT: InitData не найдена. Режим разработки.");
             const setupNeeded = localStorage.getItem('profileSetupNeeded');
             if (setupNeeded === 'false') {
                 navigateTo('dashboard');
@@ -147,6 +195,9 @@ async function initializeApp() {
 
 // 🛑 Запуск после загрузки DOM
 document.addEventListener('DOMContentLoaded', initializeApp);
+
+export { clearAuthToken, navigateTo };
+
 
 
 
