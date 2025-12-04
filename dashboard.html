@@ -5,36 +5,53 @@
         </div>
 
         <!-- Профиль игрока -->
-        <div class="px-4">
-    <div id="upcoming-match-card" class="flex flex-col gap-4 rounded-lg bg-slate-200/50 dark:bg-slate-800/50 p-4">
-        <p>Противник: <span id="opponent-name">Spartak United</span></p>
-    </div>
-    <div id="empty-match-state" class="hidden text-center p-4 text-slate-500 dark:text-slate-400">
-        Ближайший матч отсутствует
-    </div>
-</div>
+        <div class="px-4 mb-4">
+            <p id="player-nickname" class="text-xl font-bold text-slate-900 dark:text-white">Игрок</p>
+            <p id="player-position" class="text-sm text-slate-600 dark:text-slate-300">Позиция • Команда</p>
+        </div>
 
         <!-- Статистика -->
         <div class="flex flex-wrap gap-3 p-4">
             <div class="flex flex-1 flex-col gap-2 rounded-lg bg-slate-200/50 dark:bg-slate-800/50 p-4">
                 <p class="text-sm text-slate-600 dark:text-slate-300">Голы</p>
-                <p id="stat-goals" class="text-2xl font-bold text-slate-900 dark:text-white">12</p>
+                <p id="stat-goals" class="text-2xl font-bold text-slate-900 dark:text-white">0</p>
             </div>
             <div class="flex flex-1 flex-col gap-2 rounded-lg bg-slate-200/50 dark:bg-slate-800/50 p-4">
                 <p class="text-sm text-slate-600 dark:text-slate-300">Пасы</p>
-                <p id="stat-assists" class="text-2xl font-bold text-slate-900 dark:text-white">8</p>
+                <p id="stat-assists" class="text-2xl font-bold text-slate-900 dark:text-white">0</p>
             </div>
             <div class="flex flex-1 flex-col gap-2 rounded-lg bg-slate-200/50 dark:bg-slate-800/50 p-4">
                 <p class="text-sm text-slate-600 dark:text-slate-300">Матчи</p>
-                <p id="stat-matches" class="text-2xl font-bold text-slate-900 dark:text-white">15</p>
+                <p id="stat-matches" class="text-2xl font-bold text-slate-900 dark:text-white">0</p>
             </div>
         </div>
 
         <!-- Ближайший матч -->
-        <div class="px-4">
-            <div id="upcoming-match-card" class="flex flex-col gap-4 rounded-lg bg-slate-200/50 dark:bg-slate-800/50 p-4">
-                <p>Противник: <span id="opponent-name">Spartak United</span></p>
+        <div class="px-4 mb-4">
+            <div id="upcoming-match-card" class="flex flex-col gap-2 rounded-lg bg-slate-200/50 dark:bg-slate-800/50 p-4">
+                <p>Противник: <span id="opponent-name">Нет матча</span></p>
+                <p id="match-date"></p>
+                <p id="match-time"></p>
+                <p id="match-location"></p>
             </div>
+            <div id="empty-match-state" class="hidden text-center p-4 text-slate-500 dark:text-slate-400">
+                Ближайший матч отсутствует
+            </div>
+        </div>
+
+        <!-- Прогресс команды -->
+        <div class="px-4 mb-4">
+            <p class="text-sm text-slate-600 dark:text-slate-300">Химия команды</p>
+            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 relative">
+                <div id="chemistry-bar" class="bg-primary h-4 rounded-full w-0"></div>
+            </div>
+            <p id="team-chemistry" class="text-sm text-slate-900 dark:text-white mt-1">0 / 10</p>
+        </div>
+
+        <!-- Последние результаты -->
+        <div class="px-4 mb-4">
+            <p class="text-sm text-slate-600 dark:text-slate-300">Последние результаты</p>
+            <div id="results-container" class="flex gap-2 mt-2"></div>
         </div>
     </main>
 
@@ -56,4 +73,5 @@
         </div>
     </nav>
 </div>
+
 
