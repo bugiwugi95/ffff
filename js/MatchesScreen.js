@@ -1,6 +1,5 @@
 import { renderCreateMatchScreen } from './CreateMatch.js';
 
-
 export function MatchesScreen() {
     const container = document.createElement('div');
     container.style.padding = '16px';
@@ -31,10 +30,8 @@ export function MatchesScreen() {
 
     // Обработчики кнопок
     createMatchBtn.addEventListener('click', () => {
-    contentContainer.innerHTML = '';
-    renderCreateMatchScreen(contentContainer);
-});
-
+        contentContainer.innerHTML = '';
+        renderCreateMatchScreen(contentContainer);
     });
 
     historyBtn.addEventListener('click', () => {
