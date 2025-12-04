@@ -173,4 +173,5 @@ export async function authenticatedFetch(path, options = {}) {
     throw new Error('Функция authenticatedFetch не реализована. Используй конкретные функции API.');
 }
 
-export { clearAuthToken }; // Экспортируем для resetApp в main.js
+export { clearAuthToken, getAuthToken };
+ // Экспортируем для resetApp в main.js
