@@ -1,6 +1,8 @@
 import { renderCreateMatchScreen } from './CreateMatch.js';
 
 export function MatchesScreen() {
+    console.log("LOG: MatchesScreen: Инициализация экрана матчей");
+
     const container = document.createElement('div');
     container.style.padding = '16px';
 
@@ -9,7 +11,7 @@ export function MatchesScreen() {
     title.textContent = 'Матчи';
     container.appendChild(title);
 
-    // Кнопки выбора экранов
+    // Кнопки
     const btnContainer = document.createElement('div');
     btnContainer.style.marginBottom = '16px';
     btnContainer.style.display = 'flex';
@@ -28,13 +30,15 @@ export function MatchesScreen() {
     const contentContainer = document.createElement('div');
     container.appendChild(contentContainer);
 
-    // Обработчики кнопок
+    // Обработчики кнопок с логами
     createMatchBtn.addEventListener('click', () => {
+        console.log("LOG: MatchesScreen: Клик по Создать матч");
         contentContainer.innerHTML = '';
         renderCreateMatchScreen(contentContainer);
     });
 
     historyBtn.addEventListener('click', () => {
+        console.log("LOG: MatchesScreen: Клик по История матчей");
         contentContainer.innerHTML = '';
         const placeholder = document.createElement('div');
         placeholder.textContent = 'Здесь будет история матчей (пока заглушка)';
@@ -43,3 +47,4 @@ export function MatchesScreen() {
 
     return container;
 }
+
