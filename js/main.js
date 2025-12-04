@@ -196,7 +196,7 @@ async function initializeApp() {
 // 🛑 Запуск после загрузки DOM
 document.addEventListener('DOMContentLoaded', initializeApp);
 
-export { clearAuthToken, navigateTo };
+export { clearAuthToken };
 
 
 
