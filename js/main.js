@@ -2,40 +2,41 @@
 
 // 🚨 Блокировка повторной загрузки модуля
 if (window._mainModuleLoaded) {
-    console.warn("LOG: MODULE BLOCK: Модуль main.js уже загружен.");
-    throw new Error('Модуль уже загружен.');
+    console.warn("LOG: МОДУЛЬ: main.js уже загружен, блокируем повторную загрузку.");
+    throw new Error('Модуль уже загружен.'); 
 }
 window._mainModuleLoaded = true;
-console.log("LOG: MODULE BLOCK: _mainModuleLoaded = true");
+console.log("LOG: МОДУЛЬ: _mainModuleLoaded установлен в true.");
 
-// 🛑 Глобальная защита от двойного вызова initializeApp
+// 🛑 Глобальная защита от повторного initializeApp
 if (window._appInitialized) {
-    console.warn("LOG: APP BLOCK: initializeApp уже был вызван.");
+    console.warn("LOG: APP: Попытка повторного запуска initializeApp заблокирована.");
 }
 window._appInitialized = true;
-console.log("LOG: APP BLOCK: _appInitialized = true");
+console.log("LOG: APP: _appInitialized установлен в true.");
 
 // -------------------------------------------------------------
 // BASE_PATH
 (function() {
     function getBasePath() {
-        let path = window.location.pathname;
-        path = path.substring(0, path.lastIndexOf('/'));
-        if (path.endsWith('/js')) path = path.substring(0, path.lastIndexOf('/'));
-        if (!path.endsWith('/')) path += '/';
-        return path;
+        let path = window.location.pathname; 
+        path = path.substring(0, path.lastIndexOf('/')); 
+        if (path.endsWith('/js')) path = path.substring(0, path.lastIndexOf('/')); 
+        if (!path.endsWith('/')) path = path + '/';
+        return path; 
     }
-    window.BASE_PATH = getBasePath();
-    console.log("LOG: PATH: BASE_PATH =", window.BASE_PATH);
+    window.BASE_PATH = getBasePath(); 
+    console.log("LOG: PATH: BASE_PATH инициализирован:", window.BASE_PATH);
 })();
 
 // ------------------------------------------------------------------------
-// Импорты
+// ИМПОРТЫ
+// ------------------------------------------------------------------------
 import { renderPositionSelectionScreen } from './PositionSelection.js'; 
 import { renderPlayerDashboardScreen } from './PlayerDashboard.js'; 
 import { renderCreateMatchScreen } from './CreateMatch.js';
 import { MatchesScreen } from './MatchesScreen.js';
-import { authenticateTelegram, clearAuthToken } from './ApiService.js';
+import { authenticateTelegram, clearAuthToken } from './ApiService.js'; 
 
 const appRoot = document.getElementById('app-root');
 
@@ -47,65 +48,61 @@ const screens = {
 };
 
 // ------------------------------------------------------------------------
-// Навигация между экранами
+// Функция навигации
 export function navigateTo(screenName) {
-    console.log("LOG: NAVIGATION: Переход на экран", screenName);
-
+    console.log(`LOG: НАВИГАЦИЯ: Переход на экран: ${screenName}`);
     if (!appRoot) {
-        console.error("LOG: NAVIGATION: #app-root не найден");
+        console.error('LOG: НАВИГАЦИЯ: root #app-root не найден!');
         return;
     }
 
     const renderFunction = screens[screenName];
-    if (!renderFunction) {
-        console.error("LOG: NAVIGATION: Экран не найден:", screenName);
+    if (renderFunction) {
+        appRoot.innerHTML = '';
+        renderFunction(appRoot);
+        console.log(`LOG: НАВИГАЦИЯ: Экран ${screenName} отрендерен`);
+        bindBottomNavigation(); // Привязка кнопок после рендера
+    } else {
+        console.error(`LOG: НАВИГАЦИЯ: Экран не найден: ${screenName}`);
         appRoot.innerHTML = `<div class="p-10 text-center text-red-500">
             Ошибка навигации. Экран "${screenName}" не найден.
         </div>`;
-        return;
     }
-
-    appRoot.innerHTML = '';
-    const rendered = renderFunction(appRoot);
-    console.log("LOG: NAVIGATION: Экран", screenName, "отрендерен");
-
-    // После рендера привязываем нижнюю навигацию
-    setupBottomNavigation();
 }
 
 // ------------------------------------------------------------------------
-// Привязка нижней навигации
-// ------------------------------------------------------------------------
-// Функция для привязки нижней навигации (кнопка "Матчи")
-function setupBottomNavigation() {
-    console.log("LOG: NAVIGATION: Запуск функции setupBottomNavigation");
+// Функция привязки нижней навигации
+function bindBottomNavigation() {
+    console.log("LOG: NAV: bindBottomNavigation вызывается");
 
-    const navMatches = document.querySelector('#nav-matches'); // ищем кнопку глобально
+    const navDashboard = document.getElementById('nav-dashboard');
+    const navMatches = document.getElementById('nav-matches');
+
+    if (navDashboard) {
+        navDashboard.onclick = () => {
+            console.log("LOG: NAV: Клик по #nav-dashboard");
+            navigateTo('dashboard');
+        };
+    }
+
     if (navMatches) {
-        console.log("LOG: NAVIGATION: Кнопка #nav-matches найдена, привязываем обработчик клика");
+        navMatches.onclick = () => {
+            console.log("LOG: NAV: Клик по #nav-matches");
+            navigateTo('matches');
+        };
+    }
 
-        // проверяем, не повешен ли уже обработчик
-        if (!navMatches.dataset.listenerAttached) {
-            navMatches.addEventListener('click', () => {
-                console.log("LOG: NAVIGATION: Клик по кнопке 'Матчи'");
-                navigateTo('matches');
-            });
-            navMatches.dataset.listenerAttached = "true"; // флаг, чтобы не вешать повторно
-            console.log("LOG: NAVIGATION: Обработчик на кнопку 'Матчи' успешно привязан");
-        } else {
-            console.log("LOG: NAVIGATION: Обработчик на кнопку 'Матчи' уже был привязан");
-        }
+    if (!navDashboard && !navMatches) {
+        console.warn("LOG: NAV: Кнопки нижней навигации не найдены на странице.");
     } else {
-        console.warn("LOG: NAVIGATION: Кнопка #nav-matches не найдена, повторная проверка через 200ms");
-        setTimeout(setupBottomNavigation, 200);
+        console.log("LOG: NAV: Кнопки нижней навигации привязаны.");
     }
 }
 
-
 // ------------------------------------------------------------------------
-// Сброс приложения
+// Сброс состояния приложения
 export function resetApp() {
-    console.warn("LOG: RESET: Сброс состояния приложения");
+    console.warn("LOG: RESET: Сброс локального хранилища и флагов.");
     localStorage.removeItem('profileSetupNeeded');
     localStorage.removeItem('player_position_display');
     clearAuthToken();
@@ -113,8 +110,9 @@ export function resetApp() {
     window._mainModuleLoaded = false;
 }
 
-// ------------------------------------------------------------------------
-// Инициализация приложения
+/**
+ * ⭐️ Инициализация приложения
+ */
 async function initializeApp() {
     console.log("LOG: INIT: Старт initializeApp");
 
@@ -132,28 +130,27 @@ async function initializeApp() {
         </div>
     `;
 
-    const initData = window.Telegram?.WebApp?.initData;
+    const initData = window.Telegram?.WebApp?.initData; 
     const urlParams = new URLSearchParams(window.location.search);
     const shouldReset = urlParams.get('reset') === 'true';
 
     if (shouldReset) {
         resetApp();
-        console.log("LOG: INIT: Локальное хранилище сброшено");
+        console.log("LOG: INIT: Локальное хранилище сброшено.");
         appRoot.innerHTML = `<div class="p-10 text-center text-primary">
-            ✅ Настройки сброшены. Обновите страницу (без ?reset=true)
+            ✅ Настройки сброшены. Обновите страницу (без ?reset=true).
         </div>`;
         return;
     }
 
     if (!initData) {
-        console.warn("LOG: INIT: InitData отсутствует, режим разработки");
+        console.warn("LOG: INIT: InitData не найдена. Режим разработки.");
         const setupNeeded = localStorage.getItem('profileSetupNeeded');
         if (setupNeeded === 'false') {
             navigateTo('dashboard');
         } else {
             navigateTo('position-selection');
         }
-        setupBottomNavigation();
         return;
     }
 
@@ -162,7 +159,7 @@ async function initializeApp() {
         const authResponse = await authenticateTelegram(initData);
 
         if (authResponse.requiresProfileSetup) {
-            console.log("LOG: INIT: Требуется настройка профиля");
+            console.log("LOG: INIT: Требуется настройка профиля, переход на position-selection");
             navigateTo('position-selection');
         } else {
             console.log("LOG: INIT: Профиль настроен, переход на dashboard");
@@ -177,7 +174,8 @@ async function initializeApp() {
     }
 }
 
-// 🛑 Старт приложения после полной загрузки DOM
+// 🛑 Запуск после загрузки DOM
 document.addEventListener('DOMContentLoaded', initializeApp);
+
 
 
