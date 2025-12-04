@@ -1,3 +1,5 @@
+// /js/main.js
+
 // 🚨 КРИТИЧЕСКАЯ БЛОКИРОВКА ПОВТОРНОЙ ЗАГРУЗКИ МОДУЛЯ
 if (window._mainModuleLoaded) {
     console.warn("LOG: MODULE BLOCK: Повторная загрузка модуля main.js заблокирована.");
@@ -14,24 +16,22 @@ window._appInitialized = true;
 console.log("LOG: APP BLOCK: _appInitialized установлен в true.");
 
 // -------------------------------------------------------------
-// 🚨 ИНИЦИАЛИЗАЦИЯ BASE_PATH
+// BASE_PATH
 (function() {
     function getBasePath() {
         let path = window.location.pathname; 
         path = path.substring(0, path.lastIndexOf('/')); 
-        if (path.endsWith('/js')) {
-            path = path.substring(0, path.lastIndexOf('/')); 
-        }
-        if (!path.endsWith('/')) path += '/';
+        if (path.endsWith('/js')) path = path.substring(0, path.lastIndexOf('/')); 
+        if (!path.endsWith('/')) path = path + '/';
         return path; 
     }
-    
     window.BASE_PATH = getBasePath(); 
     console.log("LOG: PATH: BASE_PATH инициализирован:", window.BASE_PATH);
 })();
 
 // ------------------------------------------------------------------------
-// ИМПОРТЫ
+// ИМПОРТЫ МОДУЛЕЙ
+// ------------------------------------------------------------------------
 import { renderPositionSelectionScreen } from './PositionSelection.js'; 
 import { renderPlayerDashboardScreen } from './PlayerDashboard.js'; 
 import { renderCreateMatchScreen } from './CreateMatch.js';
@@ -47,8 +47,6 @@ const screens = {
     'matches': MatchesScreen,
 };
 
-// ------------------------------------------------------------------------
-// Навигация с корректным добавлением элемента в DOM
 export function navigateTo(screenName) {
     console.log(`LOG: NAVIGATION: Переход на экран: ${screenName}`);
     if (!appRoot) {
@@ -59,28 +57,34 @@ export function navigateTo(screenName) {
     const renderFunction = screens[screenName];
     if (renderFunction) {
         appRoot.innerHTML = ''; 
-        const screenElement = renderFunction(appRoot);
-        if (screenElement) {
-            appRoot.appendChild(screenElement);
-            console.log('LOG: NAVIGATION: Экран вставлен в DOM');
-        } else {
-            console.warn('LOG: NAVIGATION: renderFunction не вернул элемент');
-        }
+        renderFunction(appRoot);
+        console.log(`LOG: NAVIGATION: Экран ${screenName} отрендерен`);
     } else {
         console.error(`LOG: NAVIGATION: Экран не найден: ${screenName}`);
-        appRoot.innerHTML = `<div class="p-10 text-center text-red-500">Ошибка навигации. Экран "${screenName}" не найден.</div>`;
+        appRoot.innerHTML = `<div class="p-10 text-center text-red-500">
+            Ошибка навигации. Экран "${screenName}" не найден.
+        </div>`;
     }
 }
 
 // ------------------------------------------------------------------------
-// Привязка нижней навигации
-document.getElementById('nav-matches')?.addEventListener('click', () => {
-    console.log("LOG: NAVIGATION: Клик по nav-matches");
-    navigateTo('matches');
-});
+// Функция для привязки нижней навигации (фикс клика по матч)
+function setupBottomNavigation() {
+    const navMatches = document.getElementById('nav-matches');
+    if (navMatches) {
+        console.log("LOG: NAVIGATION: Привязка кнопки #nav-matches");
+        navMatches.addEventListener('click', () => {
+            console.log("LOG: NAVIGATION: Клик по #nav-matches");
+            navigateTo('matches');
+        });
+    } else {
+        console.warn("LOG: NAVIGATION: Кнопка #nav-matches не найдена, повторная проверка через 200ms");
+        setTimeout(setupBottomNavigation, 200);
+    }
+}
 
 // ------------------------------------------------------------------------
-// Сброс состояния
+// Сброс состояния приложения
 export function resetApp() {
     console.warn("LOG: RESET: Сброс локального хранилища и флагов.");
     localStorage.removeItem('profileSetupNeeded');
@@ -90,10 +94,16 @@ export function resetApp() {
     window._mainModuleLoaded = false;
 }
 
-// ------------------------------------------------------------------------
-// Инициализация приложения
+/**
+ * ⭐️ Инициализация приложения
+ */
 async function initializeApp() {
-    if (window._appInitialized === false) window._appInitialized = true;
+    console.log("LOG: INIT: Старт initializeApp");
+
+    if (!appRoot) {
+        console.error("LOG: INIT: #app-root не найден!");
+        return;
+    }
 
     appRoot.innerHTML = `
         <div class="p-10 text-center min-h-screen flex flex-col justify-center items-center">
@@ -112,7 +122,7 @@ async function initializeApp() {
         resetApp();
         console.log("LOG: INIT: Локальное хранилище сброшено.");
         appRoot.innerHTML = `<div class="p-10 text-center text-primary">
-            ✅ Настройки сброшены. Обновите страницу.
+            ✅ Настройки сброшены. Обновите страницу (без ?reset=true).
         </div>`;
         return;
     }
@@ -120,29 +130,37 @@ async function initializeApp() {
     if (!initData) {
         console.warn("LOG: INIT: InitData не найдена. Режим разработки.");
         const setupNeeded = localStorage.getItem('profileSetupNeeded');
-        if (setupNeeded === 'false') navigateTo('dashboard');
-        else navigateTo('position-selection');
+        if (setupNeeded === 'false') {
+            navigateTo('dashboard');
+        } else {
+            navigateTo('position-selection');
+        }
+        setupBottomNavigation();
         return;
     }
 
     try {
-        console.log("LOG: INIT: Начинаем аутентификацию с InitData.");
+        console.log("LOG: INIT: Аутентификация с initData");
         const authResponse = await authenticateTelegram(initData);
+        
         if (authResponse.requiresProfileSetup) {
-            console.log("LOG: INIT: Требуется настройка профиля. Переход на position-selection.");
+            console.log("LOG: INIT: Требуется настройка профиля, переход на position-selection");
             navigateTo('position-selection');
         } else {
-            console.log("LOG: INIT: Профиль настроен. Переход на dashboard.");
+            console.log("LOG: INIT: Профиль настроен, переход на dashboard");
             navigateTo('dashboard');
         }
+
+        setupBottomNavigation();
+
     } catch (error) {
-        console.error("LOG: INIT FATAL: Ошибка аутентификации.", error);
+        console.error("LOG: INIT FATAL: Ошибка аутентификации", error);
         appRoot.innerHTML = `<div class="p-10 text-center text-red-500">
             Ошибка авторизации: ${error.message}
         </div>`;
     }
 }
 
-// 🛑 Ждем загрузки DOM
+// 🛑 ФИНАЛЬНЫЙ ВЫЗОВ
 document.addEventListener('DOMContentLoaded', initializeApp);
 
