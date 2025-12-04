@@ -1,0 +1,34 @@
+<div class="flex flex-col gap-4 p-4 max-w-md mx-auto">
+    <h1 class="text-xl font-bold text-center text-slate-900 dark:text-white mb-4">Создать матч</h1>
+
+    <div class="flex flex-col gap-2">
+        <label class="text-sm font-medium text-slate-600 dark:text-slate-300">Противник</label>
+        <input id="opponent-name-input" type="text" placeholder="Название команды" 
+               class="w-full rounded-lg border border-slate-400 dark:border-slate-700 p-2 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"/>
+    </div>
+
+    <div class="flex flex-col gap-2">
+        <label class="text-sm font-medium text-slate-600 dark:text-slate-300">Дата матча</label>
+        <input id="match-date-input" type="date"
+               class="w-full rounded-lg border border-slate-400 dark:border-slate-700 p-2 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"/>
+    </div>
+
+    <div class="flex flex-col gap-2">
+        <label class="text-sm font-medium text-slate-600 dark:text-slate-300">Время матча</label>
+        <input id="match-time-input" type="time"
+               class="w-full rounded-lg border border-slate-400 dark:border-slate-700 p-2 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"/>
+    </div>
+
+    <div class="flex flex-col gap-2">
+        <label class="text-sm font-medium text-slate-600 dark:text-slate-300">Локация</label>
+        <input id="match-location-input" type="text" placeholder="Стадион/город"
+               class="w-full rounded-lg border border-slate-400 dark:border-slate-700 p-2 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"/>
+    </div>
+
+    <div id="message-container" class="mt-2"></div>
+
+    <button id="create-match-button" 
+            class="mt-4 w-full bg-primary text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-500/30">
+        Создать матч
+    </button>
+</div>
