@@ -5,15 +5,14 @@
         </div>
 
         <!-- Профиль игрока -->
-        <div class="px-4 flex flex-col gap-4">
-            <div class="flex items-center gap-4">
-                <div id="player-avatar" class="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-24 w-24" style='background-image: url("https://via.placeholder.com/96x96");'></div>
-                <div class="flex flex-col justify-center">
-                    <p id="player-nickname" class="text-slate-900 dark:text-white text-[22px] font-bold">Alex Mercer</p>
-                    <p id="player-position" class="text-slate-500 dark:text-slate-400 text-base">Forward • FC Dynamo</p>
-                </div>
-            </div>
-        </div>
+        <div class="px-4">
+    <div id="upcoming-match-card" class="flex flex-col gap-4 rounded-lg bg-slate-200/50 dark:bg-slate-800/50 p-4">
+        <p>Противник: <span id="opponent-name">Spartak United</span></p>
+    </div>
+    <div id="empty-match-state" class="hidden text-center p-4 text-slate-500 dark:text-slate-400">
+        Ближайший матч отсутствует
+    </div>
+</div>
 
         <!-- Статистика -->
         <div class="flex flex-wrap gap-3 p-4">
