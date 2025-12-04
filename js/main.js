@@ -40,7 +40,7 @@ console.log("LOG: APP BLOCK: _appInitialized установлен в true.");
 import { renderPositionSelectionScreen } from './PositionSelection.js'; 
 import { renderPlayerDashboardScreen } from './PlayerDashboard.js'; 
 import { renderCreateMatchScreen } from './CreateMatch.js';
-import { MatchesScreen } from './MatchScreen.js';
+import { MatchesScreen } from './MatchesScreen.js';
 import { authenticateTelegram, clearAuthToken } from './ApiService.js'; 
 
 const appRoot = document.getElementById('app-root');
